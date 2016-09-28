@@ -10,6 +10,39 @@
 #include <string.h>
 #include <sys/time.h>
 
+typedef struct
+{
+    double start;
+    double end;
+
+    double r0, r1;
+    double g0, g1;
+    double b0, b1;
+} colorset_t;
+
+
+colorset_t *find_colorset(colorset_t *sets, int num_sets, double hue)
+{
+    for (int i = 0; i < num_sets; ++i) {
+        colorset_t *set = &sets[i];
+
+        if (hue >= set->start && hue <= set->end)
+            return set;
+    }
+
+    return &sets[num_sets - 1];
+}
+
+void color_from_set(colorset_t *set, double hue, double *r, double *g, double *b)
+{
+    double d = hue - set->start;
+    double pos = d / (set->end - set->start);
+
+    *r = ((set->r1 - set->r0) * pos) + set->r0;
+    *g = ((set->g1 - set->g0) * pos) + set->g0;
+    *b = ((set->b1 - set->b0) * pos) + set->b0;
+}
+
 void mandelbrot(int image_width, int image_height, int max_iter, double center_x, double center_y, double height, unsigned char *image_data)
 {
     double width = height * ((double) image_width / (double) image_height);
@@ -25,6 +58,27 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
     double x, y;
     double xtemp;
     double x_squared, y_squared;
+
+    int *histogram = calloc(max_iter, sizeof(int));
+    double *hues = calloc(max_iter, sizeof(double));
+    int *image_values = malloc(image_width * image_height * sizeof(int));
+
+    colorset_t sets[3];
+
+    sets[0].start = 0.0;
+    sets[0].end = 0.9;
+    sets[0].r0 = 0.0;  sets[0].g0 = 0.0;  sets[0].b0 = 0.0;
+    sets[0].r1 = 0.1;  sets[0].g1 = 0.0;  sets[0].b1 = 0.0;
+
+    sets[1].start = 0.9;
+    sets[1].end = 0.95;
+    sets[1].r0 = 0.1;  sets[1].g0 = 0.0;  sets[1].b0 = 0.0;
+    sets[1].r1 = 1.0;  sets[1].g1 = 0.0;  sets[1].b1 = 0.0;
+
+    sets[2].start = 0.95;
+    sets[2].end = 1.0;
+    sets[2].r0 = 1.0;  sets[2].g0 = 0.0;  sets[2].b0 = 0.0;
+    sets[2].r1 = 1.0;  sets[2].g1 = 1.0;  sets[2].b1 = 0.0;
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
@@ -50,17 +104,48 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
                 ++iter;
             }
 
-            if (iter == max_iter) {
-                image_data[3 * (pixel_y * image_width + pixel_x) + 0] = 0;
-                image_data[3 * (pixel_y * image_width + pixel_x) + 1] = 0;
-                image_data[3 * (pixel_y * image_width + pixel_x) + 2] = 0;
-            } else {
-                image_data[3 * (pixel_y * image_width + pixel_x) + 0] = 255;
-                image_data[3 * (pixel_y * image_width + pixel_x) + 1] = 255;
-                image_data[3 * (pixel_y * image_width + pixel_x) + 2] = 255;
-            }
+            ++histogram[iter - 1];
+            image_values[pixel_y * image_width + pixel_x] = iter - 1;
         }
     }
+
+    int total = 0;
+
+    for (int i = 0; i < max_iter - 1; ++i)
+        total += histogram[i];
+
+    int running_total = 0;
+
+    for (int i = 0; i < max_iter - 1; ++i) {
+        running_total += histogram[i];
+        hues[i] = (double) running_total / (double) total;
+    }
+
+    for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
+        for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
+            int iter = image_values[pixel_y * image_width + pixel_x];
+            double hue;
+            double r, g, b;
+
+            if (iter == (max_iter - 1)) {
+                r = 0.0;
+                g = 0.0;
+                b = 0.0;
+            } else {
+                hue = hues[iter];
+                colorset_t *set = find_colorset(sets, 3, hue);
+                color_from_set(set, hue, &r, &g, &b);
+            }
+
+            image_data[3 * (pixel_y * image_width + pixel_x) + 0] = (unsigned char) (255.0 * r);
+            image_data[3 * (pixel_y * image_width + pixel_x) + 1] = (unsigned char) (255.0 * g);
+            image_data[3 * (pixel_y * image_width + pixel_x) + 2] = (unsigned char) (255.0 * b);
+        }
+    }
+
+    free(image_values);
+    free(histogram);
+    free(hues);
 }
 
 void die(int error)
