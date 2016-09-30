@@ -1,8 +1,13 @@
 /*
  * C Mandelbrot.
  *
- * Usage: ./mandelbrot <image_width> <image_height> <iterations> <repetitions (1+)> <center x> <center y> <section height> <output filename>
- * Example: ./mandelbrot 320 200 20 1 -0.5 0.0 2.0 mandelbrot.raw
+ * Usage: ./mandelbrot <image_width> <image_height> <iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+ * Example: ./mandelbrot 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
+ *
+ * Gradient file example:
+ *   0.0: 0.0, 0.0, 0.0
+ *   0.5: 0.0, 0.0, 1.0
+ *   1.0: 1.0, 1.0, 1.0
  */
 
 #include <stdlib.h>
@@ -12,38 +17,149 @@
 
 typedef struct
 {
-    double start;
-    double end;
+    double pos;
+    double r, g, b;
+} gradient_color_t;
 
-    double r0, r1;
-    double g0, g1;
-    double b0, b1;
-} colorset_t;
-
-
-colorset_t *find_colorset(colorset_t *sets, int num_sets, double hue)
+typedef struct
 {
-    for (int i = 0; i < num_sets; ++i) {
-        colorset_t *set = &sets[i];
+    gradient_color_t *colors;
 
-        if (hue >= set->start && hue <= set->end)
-            return set;
+    int num_colors;
+} gradient_t;
+
+
+void die(int error)
+{
+    fprintf(stderr, "Error: %d\n", error);
+    exit(error);
+}
+
+gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, double pos)
+{
+    for (int i = 0; i < gradient->num_colors; ++i)
+        if (gradient->colors[i].pos == pos)
+            return &gradient->colors[i];
+
+    return NULL;
+}
+
+int cmp_color_pos_func(const void *p1, const void *p2)
+{
+    const gradient_color_t *a = (const gradient_color_t *) p1;
+    const gradient_color_t *b = (const gradient_color_t *) p2;
+
+    if (a->pos == b->pos)
+        return 0;
+
+    return (a->pos < b->pos) ? -1 : 1;
+}
+
+gradient_t *load_gradient(char *filename)
+{
+    FILE *fp;
+    gradient_t *gradient;
+    char buf[256];
+
+    if (!(gradient = malloc(sizeof(gradient_t))))
+        die(6);
+
+    gradient->num_colors = 2;
+    gradient->colors = malloc(2 * sizeof(gradient_color_t));
+
+    gradient->colors[0].pos = 0.0;
+    gradient->colors[0].r = 0.0;
+    gradient->colors[0].g = 0.0;
+    gradient->colors[0].b = 0.0;
+
+    gradient->colors[1].pos = 1.0;
+    gradient->colors[1].r = 1.0;
+    gradient->colors[1].g = 1.0;
+    gradient->colors[1].b = 1.0;
+
+    if (!(fp = fopen(filename, "r")))
+        die(7);
+
+    while (fgets(buf, sizeof(buf), fp)) {
+        double pos, r, g, b;
+        gradient_color_t *col;
+
+        if (sscanf(buf, "%lf: %lf, %lf, %lf", &pos, &r, &g, &b) != 4)
+            continue;
+
+        if (!(col = gradient_get_color_at_position(gradient, pos))) {
+            gradient->num_colors++;
+            gradient->colors = realloc(gradient->colors, gradient->num_colors * sizeof(gradient_color_t));
+            col = &gradient->colors[gradient->num_colors - 1];
+        }
+
+        col->pos = pos;
+        col->r = r;
+        col->g = g;
+        col->b = b;
     }
 
-    return &sets[num_sets - 1];
+    qsort(gradient->colors, gradient->num_colors, sizeof(gradient_color_t), cmp_color_pos_func);
+
+    fclose(fp);
+    return gradient;
 }
 
-void color_from_set(colorset_t *set, double hue, double *r, double *g, double *b)
+void free_gradient(gradient_t *gradient)
 {
-    double d = hue - set->start;
-    double pos = d / (set->end - set->start);
-
-    *r = ((set->r1 - set->r0) * pos) + set->r0;
-    *g = ((set->g1 - set->g0) * pos) + set->g0;
-    *b = ((set->b1 - set->b0) * pos) + set->b0;
+    free(gradient->colors);
+    free(gradient);
 }
 
-void mandelbrot(int image_width, int image_height, int max_iter, double center_x, double center_y, double height, unsigned char *image_data)
+void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
+{
+    if (left->pos == pos || left->pos == right->pos) {
+        *r = left->r;
+        *g = left->g;
+        *b = left->b;
+        return;
+    }
+
+    if (right->pos == pos) {
+        *r = right->r;
+        *g = right->g;
+        *b = right->b;
+        return;
+    }
+
+    double d = pos - left->pos;
+    double pos2 = d / (right->pos - left->pos);
+
+    *r = ((right->r - left->r) * pos2) + left->r;
+    *g = ((right->g - left->g) * pos2) + left->g;
+    *b = ((right->b - left->b) * pos2) + left->b;
+}
+
+void color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, double *b)
+{
+    if (pos < 0.0)
+        pos = 0.0;
+
+    if (pos > 1.0)
+        pos = 1.0;
+
+    gradient_color_t *left, *right;
+
+    left = &gradient->colors[0];
+
+    for (int i = 0; i < gradient->num_colors; ++i) {
+        right = &gradient->colors[i];
+
+        if (pos >= left->pos && pos <= right->pos) {
+            color_from_gradient_range(left, right, pos, r, g, b);
+            return;
+        }
+
+        left = right;
+    }
+}
+
+void mandelbrot(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data)
 {
     double width = height * ((double) image_width / (double) image_height);
 
@@ -59,26 +175,9 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
     double xtemp;
     double x_squared, y_squared;
 
-    int *histogram = calloc(max_iter, sizeof(int));
-    double *hues = calloc(max_iter, sizeof(double));
-    int *image_values = malloc(image_width * image_height * sizeof(int));
-
-    colorset_t sets[3];
-
-    sets[0].start = 0.0;
-    sets[0].end = 0.9;
-    sets[0].r0 = 0.0;  sets[0].g0 = 0.0;  sets[0].b0 = 0.0;
-    sets[0].r1 = 0.1;  sets[0].g1 = 0.0;  sets[0].b1 = 0.0;
-
-    sets[1].start = 0.9;
-    sets[1].end = 0.95;
-    sets[1].r0 = 0.1;  sets[1].g0 = 0.0;  sets[1].b0 = 0.0;
-    sets[1].r1 = 1.0;  sets[1].g1 = 0.0;  sets[1].b1 = 0.0;
-
-    sets[2].start = 0.95;
-    sets[2].end = 1.0;
-    sets[2].r0 = 1.0;  sets[2].g0 = 0.0;  sets[2].b0 = 0.0;
-    sets[2].r1 = 1.0;  sets[2].g1 = 1.0;  sets[2].b1 = 0.0;
+    int *histogram = calloc(max_iterations, sizeof(int));
+    int *image_iterations_per_pixel = malloc(image_width * image_height * sizeof(int));
+    double *normalized_colors = calloc(max_iterations, sizeof(double));
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
@@ -90,7 +189,7 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
 
             iter = 0;
 
-            while (iter < max_iter) {
+            while (iter < max_iterations) {
                 x_squared = x*x;
                 y_squared = y*y;
 
@@ -104,37 +203,38 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
                 ++iter;
             }
 
+            // count iterations (0 .. max - 1) in histogram and store iterations per pixel
             ++histogram[iter - 1];
-            image_values[pixel_y * image_width + pixel_x] = iter - 1;
+            image_iterations_per_pixel[pixel_y * image_width + pixel_x] = iter - 1;
         }
     }
 
-    int total = 0;
+    // sum all iterations (not counting the last one (max. iteration - 1))
+    int total_iterations = 0;
 
-    for (int i = 0; i < max_iter - 1; ++i)
-        total += histogram[i];
+    for (int i = 0; i < max_iterations - 1; ++i)
+        total_iterations += histogram[i];
 
+    // normalize the colors (0.0 .. 1.0) based on how often they are used in the image (not counting max. iteration)
     int running_total = 0;
 
-    for (int i = 0; i < max_iter - 1; ++i) {
+    for (int i = 0; i < max_iterations - 1; ++i) {
         running_total += histogram[i];
-        hues[i] = (double) running_total / (double) total;
+        normalized_colors[i] = (double) running_total / (double) total_iterations;
     }
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            int iter = image_values[pixel_y * image_width + pixel_x];
-            double hue;
+            int iter = image_iterations_per_pixel[pixel_y * image_width + pixel_x];
             double r, g, b;
 
-            if (iter == (max_iter - 1)) {
+            if (iter == (max_iterations - 1)) {
+                // pixels with max. iterations are always black
                 r = 0.0;
                 g = 0.0;
                 b = 0.0;
             } else {
-                hue = hues[iter];
-                colorset_t *set = find_colorset(sets, 3, hue);
-                color_from_set(set, hue, &r, &g, &b);
+                color_from_gradient(gradient, normalized_colors[iter], &r, &g, &b);
             }
 
             image_data[3 * (pixel_y * image_width + pixel_x) + 0] = (unsigned char) (255.0 * r);
@@ -143,15 +243,9 @@ void mandelbrot(int image_width, int image_height, int max_iter, double center_x
         }
     }
 
-    free(image_values);
+    free(image_iterations_per_pixel);
     free(histogram);
-    free(hues);
-}
-
-void die(int error)
-{
-    fprintf(stderr, "Error: %d\n", error);
-    exit(error);
+    free(normalized_colors);
 }
 
 void save_image(const unsigned char *image_data, int width, int height)
@@ -247,9 +341,9 @@ double gettime()
 }
 
 void eval_args(int argc, char **argv, int *image_width, int *image_height, int *iterations, int *repetitions,
-               double *center_x, double *center_y, double *height, char **filename)
+               double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
-    if (argc < 9)
+    if (argc < 10)
         die(1);
 
     *image_width  = atoi(argv[1]);
@@ -259,7 +353,8 @@ void eval_args(int argc, char **argv, int *image_width, int *image_height, int *
     *center_x     = atof(argv[5]);
     *center_y     = atof(argv[6]);
     *height       = atof(argv[7]);
-    *filename     = argv[8];
+    *colors       = argv[8];
+    *filename     = argv[9];
 }
 
 int main(int argc, char **argv)
@@ -268,10 +363,13 @@ int main(int argc, char **argv)
     int iterations, repetitions;
     double center_x, center_y, height;
     double *durations;
-    char *filename;
+    char *gradient_filename, *filename;
     unsigned char *image_data;
+    gradient_t *gradient;
 
-    eval_args(argc, argv, &image_width, &image_height, &iterations, &repetitions, &center_x, &center_y, &height, &filename);
+    eval_args(argc, argv, &image_width, &image_height, &iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename);
+
+    gradient = load_gradient(gradient_filename);
 
     image_data = malloc(image_width * image_height * 3 * sizeof(unsigned char));
     durations = malloc(repetitions * sizeof(double));
@@ -280,7 +378,7 @@ int main(int argc, char **argv)
         double t1, t2;
 
         t1 = gettime();
-        mandelbrot(image_width, image_height, iterations, center_x, center_y, height, image_data);
+        mandelbrot(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data);
         t2 = gettime();
 
         durations[i] = t2 - t1;
@@ -291,6 +389,7 @@ int main(int argc, char **argv)
 
     free(image_data);
     free(durations);
+    free_gradient(gradient);
 
     return 0;
 }
