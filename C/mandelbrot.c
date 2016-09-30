@@ -15,6 +15,14 @@
 #include <string.h>
 #include <sys/time.h>
 
+typedef enum error_t {
+    ERROR_ALLOC_MEMORY = 1,
+    ERROR_EVAL_ARGS,
+    ERROR_LOAD_GRADIENT,
+    ERROR_SAVE_IMAGE,
+    ERROR_GETTIME
+} error_t;
+
 typedef struct
 {
     double pos;
@@ -29,7 +37,7 @@ typedef struct
 } gradient_t;
 
 
-void die(int error)
+void die(error_t error)
 {
     fprintf(stderr, "Error: %d\n", error);
     exit(error);
@@ -62,10 +70,12 @@ gradient_t *load_gradient(char *filename)
     char buf[256];
 
     if (!(gradient = malloc(sizeof(gradient_t))))
-        die(6);
+        die(ERROR_ALLOC_MEMORY);
 
     gradient->num_colors = 2;
-    gradient->colors = malloc(2 * sizeof(gradient_color_t));
+
+    if (!(gradient->colors = malloc(gradient->num_colors * sizeof(gradient_color_t))))
+        die(ERROR_ALLOC_MEMORY);
 
     gradient->colors[0].pos = 0.0;
     gradient->colors[0].r = 0.0;
@@ -78,7 +88,7 @@ gradient_t *load_gradient(char *filename)
     gradient->colors[1].b = 1.0;
 
     if (!(fp = fopen(filename, "r")))
-        die(7);
+        return NULL;
 
     while (fgets(buf, sizeof(buf), fp)) {
         double pos, r, g, b;
@@ -135,7 +145,7 @@ void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, 
     *b = ((right->b - left->b) * pos2) + left->b;
 }
 
-void color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, double *b)
+int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, double *b)
 {
     if (pos < 0.0)
         pos = 0.0;
@@ -152,11 +162,13 @@ void color_from_gradient(gradient_t *gradient, double pos, double *r, double *g,
 
         if (pos >= left->pos && pos <= right->pos) {
             color_from_gradient_range(left, right, pos, r, g, b);
-            return;
+            return 0;
         }
 
         left = right;
     }
+
+    return -1;
 }
 
 void mandelbrot(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data)
@@ -175,9 +187,18 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     double xtemp;
     double x_squared, y_squared;
 
-    int *histogram = calloc(max_iterations, sizeof(int));
-    int *image_iterations_per_pixel = malloc(image_width * image_height * sizeof(int));
-    double *normalized_colors = calloc(max_iterations, sizeof(double));
+    int *histogram;
+    int *image_iterations_per_pixel;
+    double *normalized_colors;
+
+    if (!(histogram = calloc(max_iterations, sizeof(int))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(image_iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(normalized_colors = calloc(max_iterations, sizeof(double))))
+        die(ERROR_ALLOC_MEMORY);
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
@@ -248,15 +269,17 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     free(normalized_colors);
 }
 
-void save_image(const unsigned char *image_data, int width, int height)
+int save_image(const unsigned char *image_data, int width, int height)
 {
     FILE *fp;
 
     if (!(fp = fopen("mandelbrot.raw", "w")))
-        die(5);
+        return -1;
 
     fwrite(image_data, sizeof(unsigned char), 3 * width * height, fp);
     fclose(fp);
+
+    return 0;
 }
 
 int cmp_doubles_func(const void *p1, const void *p2)
@@ -285,7 +308,7 @@ double median(const double *values, int num_values)
     double *sorted_values;
 
     if (!(sorted_values = malloc(num_values * sizeof(double))))
-        die(4);
+        die(ERROR_ALLOC_MEMORY);
 
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
@@ -304,7 +327,7 @@ void print_durations(const double *values, int num_values)
     double *sorted_values;
 
     if (!(sorted_values = malloc(num_values * sizeof(double))))
-        die(3);
+        die(ERROR_ALLOC_MEMORY);
 
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
@@ -335,16 +358,16 @@ double gettime()
     struct timeval tv;
 
     if (gettimeofday(&tv, NULL) != 0)
-        die(2);
+        die(ERROR_GETTIME);
 
     return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 }
 
-void eval_args(int argc, char **argv, int *image_width, int *image_height, int *iterations, int *repetitions,
+int eval_args(int argc, char **argv, int *image_width, int *image_height, int *iterations, int *repetitions,
                double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
     if (argc < 10)
-        die(1);
+        return -1;
 
     *image_width  = atoi(argv[1]);
     *image_height = atoi(argv[2]);
@@ -355,6 +378,8 @@ void eval_args(int argc, char **argv, int *image_width, int *image_height, int *
     *height       = atof(argv[7]);
     *colors       = argv[8];
     *filename     = argv[9];
+
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -367,12 +392,17 @@ int main(int argc, char **argv)
     unsigned char *image_data;
     gradient_t *gradient;
 
-    eval_args(argc, argv, &image_width, &image_height, &iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename);
+    if (eval_args(argc, argv, &image_width, &image_height, &iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename) < 0)
+        die(ERROR_EVAL_ARGS);
 
-    gradient = load_gradient(gradient_filename);
+    if (!(gradient = load_gradient(gradient_filename)))
+        die(ERROR_LOAD_GRADIENT);
 
-    image_data = malloc(image_width * image_height * 3 * sizeof(unsigned char));
-    durations = malloc(repetitions * sizeof(double));
+    if (!(image_data = malloc(image_width * image_height * 3 * sizeof(unsigned char))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(durations = malloc(repetitions * sizeof(double))))
+        die(ERROR_ALLOC_MEMORY);
 
     for (int i = 0; i < repetitions; ++i) {
         double t1, t2;
@@ -384,7 +414,9 @@ int main(int argc, char **argv)
         durations[i] = t2 - t1;
     }
 
-    save_image(image_data, image_width, image_height);
+    if (save_image(image_data, image_width, image_height) < 0)
+        die(ERROR_SAVE_IMAGE);
+
     show_summary(durations, repetitions);
 
     free(image_data);
