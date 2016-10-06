@@ -322,9 +322,14 @@ double median(const double *values, int num_values)
     return d;
 }
 
-void print_durations(const double *values, int num_values)
+char *durations2string(const double *values, int num_values)
 {
     double *sorted_values;
+    char *buf;
+    char tmp[32];
+    int buf_len = 256;
+    int tmp_len;
+    int pos;
 
     if (!(sorted_values = malloc(num_values * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
@@ -332,14 +337,31 @@ void print_durations(const double *values, int num_values)
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
 
-    printf("[");
+    if (!(buf = malloc(buf_len * sizeof(char))))
+        die(ERROR_ALLOC_MEMORY);
 
-    for (int i = 0; i < num_values; ++i)
-        printf("%s%f", (i > 0) ? ", " : "", sorted_values[i]);
+    sprintf(buf, "[");
+    pos = strlen(buf);
 
-    printf("]");
+    for (int i = 0; i < num_values; ++i) {
+        sprintf(tmp, "%s%f", (i > 0) ? ", " : "", sorted_values[i]);
+        tmp_len = strlen(tmp);
 
+        if ((pos + tmp_len + 1) > buf_len) {
+            buf_len += 256;
+
+            if (!(buf = realloc(buf, buf_len)))
+                die(ERROR_ALLOC_MEMORY);
+        }
+
+        memcpy(buf + pos, tmp, tmp_len + 1);
+        pos += tmp_len;
+    }
+
+    sprintf(buf + pos, "]");
     free(sorted_values);
+
+    return buf;
 }
 
 void show_summary(const double *durations, int repetitions)
@@ -347,9 +369,9 @@ void show_summary(const double *durations, int repetitions)
     if (repetitions == 1) {
         printf("%f s\n", durations[0]);
     } else {
-        printf("mean: %f s, median: %f s (repetitions=%d) ", mean(durations, repetitions), median(durations, repetitions), repetitions);
-        print_durations(durations, repetitions);
-        printf("\n");
+        char *s = durations2string(durations, repetitions);
+        printf("mean: %f s, median: %f s (repetitions=%d) %s\n", mean(durations, repetitions), median(durations, repetitions), repetitions, s);
+        free(s);
     }
 }
 
