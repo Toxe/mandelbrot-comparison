@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <float.h>
 #include <sys/time.h>
 
 typedef enum error_t {
@@ -43,10 +45,22 @@ void die(error_t error)
     exit(error);
 }
 
+// Compare two double values for "enough" equality.
+int equalEnough(double a, double b)
+{
+    a = fabs(a);
+    b = fabs(b);
+
+    double diff = fabs(a - b);
+    double largest = fmax(a, b);
+
+    return diff <= largest * DBL_EPSILON;
+}
+
 gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, double pos)
 {
     for (int i = 0; i < gradient->num_colors; ++i)
-        if (gradient->colors[i].pos == pos)
+        if (equalEnough(gradient->colors[i].pos, pos))
             return &gradient->colors[i];
 
     return NULL;
@@ -57,7 +71,7 @@ int cmp_color_pos_func(const void *p1, const void *p2)
     const gradient_color_t *a = (const gradient_color_t *) p1;
     const gradient_color_t *b = (const gradient_color_t *) p2;
 
-    if (a->pos == b->pos)
+    if (equalEnough(a->pos, b->pos))
         return 0;
 
     return (a->pos < b->pos) ? -1 : 1;
@@ -123,14 +137,14 @@ void free_gradient(gradient_t *gradient)
 
 void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
 {
-    if (left->pos == pos || left->pos == right->pos) {
+    if (equalEnough(left->pos, pos) || equalEnough(left->pos, right->pos)) {
         *r = left->r;
         *g = left->g;
         *b = left->b;
         return;
     }
 
-    if (right->pos == pos) {
+    if (equalEnough(right->pos, pos)) {
         *r = right->r;
         *g = right->g;
         *b = right->b;
@@ -287,7 +301,7 @@ int cmp_doubles_func(const void *p1, const void *p2)
     double a = *((const double *) p1);
     double b = *((const double *) p2);
 
-    if (a == b)
+    if (equalEnough(a, b))
         return 0;
 
     return (a < b) ? -1 : 1;
