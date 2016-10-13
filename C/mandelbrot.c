@@ -200,15 +200,26 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     double x, y;
     double xtemp;
     double x_squared, y_squared;
+    double final_magnitude;
+    double smooth_iteration;
+
+    const double bailout = 20.0;
+    const double bailout_squared = bailout * bailout;
+    const double log_log_bailout = log(log(bailout));
+    const double log_2 = log(2.0);
 
     int *histogram;
-    int *image_iterations_per_pixel;
+    int *iterations_per_pixel;
+    double *smooth_iterations_per_pixel;
     double *normalized_colors;
 
     if (!(histogram = calloc(max_iterations, sizeof(int))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(image_iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
+    if (!(iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(smooth_iterations_per_pixel = malloc(image_width * image_height * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
     if (!(normalized_colors = calloc(max_iterations, sizeof(double))))
@@ -222,13 +233,14 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
             x = 0;
             y = 0;
 
+            // iteration, will be from 1 to max_iterations once the loop is done
             iter = 0;
 
             while (iter < max_iterations) {
                 x_squared = x*x;
                 y_squared = y*y;
 
-                if (x_squared + y_squared >= 4.0)
+                if (x_squared + y_squared >= bailout_squared)
                     break;
 
                 xtemp = x_squared - y_squared + x0;
@@ -238,13 +250,16 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
                 ++iter;
             }
 
-            // count iterations (0 .. max - 1) in histogram and store iterations per pixel
+            final_magnitude = sqrt(x_squared + y_squared);
+            smooth_iteration = (double) (iter + 1) - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
+
             ++histogram[iter - 1];
-            image_iterations_per_pixel[pixel_y * image_width + pixel_x] = iter - 1;
+            iterations_per_pixel[pixel_y * image_width + pixel_x] = iter;  // 1 .. max_iterations
+            smooth_iterations_per_pixel[pixel_y * image_width + pixel_x] = smooth_iteration;
         }
     }
 
-    // sum all iterations (not counting the last one (max. iteration - 1))
+    // sum all iterations (not counting the last one (at position max. iteration - 1))
     int total_iterations = 0;
 
     for (int i = 0; i < max_iterations - 1; ++i)
@@ -260,16 +275,22 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            int iter = image_iterations_per_pixel[pixel_y * image_width + pixel_x];
+            int iter = iterations_per_pixel[pixel_y * image_width + pixel_x];  // 1 .. max_iterations
+            double smooth_iteration = smooth_iterations_per_pixel[pixel_y * image_width + pixel_x];  // iter .. iter+1.0
             double r, g, b;
 
-            if (iter == (max_iterations - 1)) {
+            if (iter == max_iterations) {
                 // pixels with max. iterations are always black
                 r = 0.0;
                 g = 0.0;
                 b = 0.0;
             } else {
-                color_from_gradient(gradient, normalized_colors[iter], &r, &g, &b);
+                double color_current_iter = normalized_colors[iter - 1];
+                double color_next_iter    = normalized_colors[iter];
+                double d = smooth_iteration - (double) iter;
+                double p = color_current_iter + d * (color_next_iter - color_current_iter);
+
+                color_from_gradient(gradient, p, &r, &g, &b);
             }
 
             image_data[3 * (pixel_y * image_width + pixel_x) + 0] = (unsigned char) (255.0 * r);
@@ -278,7 +299,8 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
         }
     }
 
-    free(image_iterations_per_pixel);
+    free(iterations_per_pixel);
+    free(smooth_iterations_per_pixel);
     free(histogram);
     free(normalized_colors);
 }
