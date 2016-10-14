@@ -15,6 +15,8 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <errno.h>
+#include <limits.h>
 #include <sys/time.h>
 
 typedef enum error_t {
@@ -422,19 +424,45 @@ double gettime()
     return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 }
 
+int eval_int_arg(const char *s, int min, int max)
+{
+    int value;
+
+    errno = 0;
+    value = strtol(s, NULL, 0);
+
+    if (errno == ERANGE || value < min || value > max)
+        die(ERROR_EVAL_ARGS);
+
+    return value;
+}
+
+double eval_double_arg(const char *s, double min, double max)
+{
+    double value;
+
+    errno = 0;
+    value = strtod(s, NULL);
+
+    if (errno == ERANGE || value < min || value > max || isnan(value) || isinf(value))
+        die(ERROR_EVAL_ARGS);
+
+    return value;
+}
+
 int eval_args(int argc, char **argv, int *image_width, int *image_height, int *iterations, int *repetitions,
-               double *center_x, double *center_y, double *height, char **colors, char **filename)
+              double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
     if (argc < 10)
         return -1;
 
-    *image_width  = atoi(argv[1]);
-    *image_height = atoi(argv[2]);
-    *iterations   = atoi(argv[3]);
-    *repetitions  = atoi(argv[4]);
-    *center_x     = atof(argv[5]);
-    *center_y     = atof(argv[6]);
-    *height       = atof(argv[7]);
+    *image_width  = eval_int_arg(argv[1], 1, 100000);
+    *image_height = eval_int_arg(argv[2], 1, 100000);
+    *iterations   = eval_int_arg(argv[3], 1, 1000000000);
+    *repetitions  = eval_int_arg(argv[4], 1, 1000000);
+    *center_x     = eval_double_arg(argv[5], -100.0, 100.0);
+    *center_y     = eval_double_arg(argv[6], -100.0, 100.0);
+    *height       = eval_double_arg(argv[7], -100.0, 100.0);
     *colors       = argv[8];
     *filename     = argv[9];
 
