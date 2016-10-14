@@ -187,8 +187,8 @@ int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, 
     return -1;
 }
 
-void mandelbrot(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient,
-                unsigned char *image_data, int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel, double *normalized_colors)
+void mandelbrot_calc(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height,
+                     int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel)
 {
     double width = height * ((double) image_width / (double) image_height);
 
@@ -197,7 +197,6 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     double y_top    = center_y + height / 2.0;
  // double y_bottom = center_y - height / 2.0;
 
-    int pixel_x, pixel_y;
     int iter;
     double x0, y0;
     double x, y;
@@ -210,10 +209,9 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     const double log_2 = log(2.0);
 
     memset(histogram, 0, (max_iterations + 1) * sizeof(int));
-    memset(normalized_colors, 0, (max_iterations + 1) * sizeof(double));
 
-    for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
-        for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
+    for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
+        for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
             x0 = x_left + width * ((double) pixel_x / (double) image_width);
             y0 = y_top - height * ((double) pixel_y / (double) image_height);
 
@@ -244,6 +242,12 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter;  // 1 .. max_iterations
         }
     }
+}
+
+void mandelbrot_colorize(int image_width, int image_height, int max_iterations, gradient_t *gradient,
+                         unsigned char *image_data, int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel, double *normalized_colors)
+{
+    memset(normalized_colors, 0, (max_iterations + 1) * sizeof(double));
 
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
@@ -261,8 +265,8 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
         normalized_colors[i] = (double) running_total / (double) total_iterations;
     }
 
-    for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
-        for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
+    for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
+        for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
             int iter = iterations_per_pixel[pixel_y * image_width + pixel_x];  // 1 .. max_iterations
             double r, g, b;
 
@@ -474,7 +478,8 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
         double t1, t2;
 
         t1 = gettime();
-        mandelbrot(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors);
+        mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel);
+        mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors);
         t2 = gettime();
 
         durations[i] = t2 - t1;
