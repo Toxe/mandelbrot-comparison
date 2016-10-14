@@ -187,7 +187,8 @@ int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, 
     return -1;
 }
 
-void mandelbrot(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data)
+void mandelbrot(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient,
+                unsigned char *image_data, int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel, double *normalized_colors)
 {
     double width = height * ((double) image_width / (double) image_height);
 
@@ -208,23 +209,8 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
     const double log_log_bailout = log(log(bailout));
     const double log_2 = log(2.0);
 
-    int *histogram;
-    int *iterations_per_pixel;
-    double *smoothed_distances_to_next_iteration_per_pixel;
-    double *normalized_colors;
-
-    // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    if (!(histogram = calloc(max_iterations + 1, sizeof(int))))
-        die(ERROR_ALLOC_MEMORY);
-
-    if (!(normalized_colors = calloc(max_iterations + 1, sizeof(double))))
-        die(ERROR_ALLOC_MEMORY);
-
-    if (!(iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
-        die(ERROR_ALLOC_MEMORY);
-
-    if (!(smoothed_distances_to_next_iteration_per_pixel = malloc(image_width * image_height * sizeof(double))))
-        die(ERROR_ALLOC_MEMORY);
+    memset(histogram, 0, (max_iterations + 1) * sizeof(int));
+    memset(normalized_colors, 0, (max_iterations + 1) * sizeof(double));
 
     for (pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (pixel_x = 0; pixel_x < image_width; ++pixel_x) {
@@ -301,11 +287,6 @@ void mandelbrot(int image_width, int image_height, int max_iterations, double ce
             image_data[3 * (pixel_y * image_width + pixel_x) + 2] = (unsigned char) (255.0 * b);
         }
     }
-
-    free(iterations_per_pixel);
-    free(smoothed_distances_to_next_iteration_per_pixel);
-    free(histogram);
-    free(normalized_colors);
 }
 
 int save_image(const unsigned char *image_data, int width, int height)
@@ -471,15 +452,38 @@ int eval_args(int argc, char **argv, int *image_width, int *image_height, int *i
 
 void go(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data, double *durations, int repetitions)
 {
+    int *histogram;
+    int *iterations_per_pixel;
+    double *smoothed_distances_to_next_iteration_per_pixel;
+    double *normalized_colors;
+
+    // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
+    if (!(histogram = malloc((max_iterations + 1) * sizeof(int))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(normalized_colors = malloc((max_iterations + 1) * sizeof(double))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
+        die(ERROR_ALLOC_MEMORY);
+
+    if (!(smoothed_distances_to_next_iteration_per_pixel = malloc(image_width * image_height * sizeof(double))))
+        die(ERROR_ALLOC_MEMORY);
+
     for (int i = 0; i < repetitions; ++i) {
         double t1, t2;
 
         t1 = gettime();
-        mandelbrot(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data);
+        mandelbrot(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors);
         t2 = gettime();
 
         durations[i] = t2 - t1;
     }
+
+    free(iterations_per_pixel);
+    free(smoothed_distances_to_next_iteration_per_pixel);
+    free(histogram);
+    free(normalized_colors);
 }
 
 int main(int argc, char **argv)
