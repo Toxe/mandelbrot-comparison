@@ -469,6 +469,19 @@ int eval_args(int argc, char **argv, int *image_width, int *image_height, int *i
     return 0;
 }
 
+void go(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data, double *durations, int repetitions)
+{
+    for (int i = 0; i < repetitions; ++i) {
+        double t1, t2;
+
+        t1 = gettime();
+        mandelbrot(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data);
+        t2 = gettime();
+
+        durations[i] = t2 - t1;
+    }
+}
+
 int main(int argc, char **argv)
 {
     int image_width, image_height;
@@ -491,15 +504,7 @@ int main(int argc, char **argv)
     if (!(durations = malloc(repetitions * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
-    for (int i = 0; i < repetitions; ++i) {
-        double t1, t2;
-
-        t1 = gettime();
-        mandelbrot(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data);
-        t2 = gettime();
-
-        durations[i] = t2 - t1;
-    }
+    go(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
 
     if (save_image(image_data, image_width, image_height) < 0)
         die(ERROR_SAVE_IMAGE);
