@@ -7,4 +7,4 @@ release: mandelbrot.c
 	cc -Wall -Wfloat-equal -O3 -o mandelbrot mandelbrot.c
 
 clean:
-	rm -r mandelbrot *.dSYM
+	rm -rf mandelbrot mandelbrot.dSYM
