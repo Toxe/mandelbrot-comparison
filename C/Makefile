@@ -1,4 +1,4 @@
-all: debug
+all: release
 
 debug: mandelbrot.c
 	cc -Wall -Wfloat-equal -O0 -g -o mandelbrot mandelbrot.c
