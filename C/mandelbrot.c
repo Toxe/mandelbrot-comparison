@@ -295,11 +295,11 @@ void mandelbrot_colorize(int image_width, int image_height, int max_iterations, 
     }
 }
 
-int save_image(const unsigned char *image_data, int width, int height)
+int save_image(const char *filename, const unsigned char *image_data, int width, int height)
 {
     FILE *fp;
 
-    if (!(fp = fopen("mandelbrot.raw", "w")))
+    if (!(fp = fopen(filename, "w")))
         return -1;
 
     fwrite(image_data, sizeof(unsigned char), 3 * width * height, fp);
@@ -517,7 +517,7 @@ int main(int argc, char **argv)
 
     go(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
 
-    if (save_image(image_data, image_width, image_height) < 0)
+    if (save_image(filename, image_data, image_width, image_height) < 0)
         die(ERROR_SAVE_IMAGE);
 
     show_summary(durations, repetitions);
