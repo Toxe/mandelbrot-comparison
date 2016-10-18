@@ -50,7 +50,7 @@ void die(error_t error)
 }
 
 // Compare two double values for "enough" equality.
-int equalEnough(double a, double b)
+int equal_enough(double a, double b)
 {
     a = fabs(a);
     b = fabs(b);
@@ -64,7 +64,7 @@ int equalEnough(double a, double b)
 gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, double pos)
 {
     for (int i = 0; i < gradient->num_colors; ++i)
-        if (equalEnough(gradient->colors[i].pos, pos))
+        if (equal_enough(gradient->colors[i].pos, pos))
             return &gradient->colors[i];
 
     return NULL;
@@ -75,7 +75,7 @@ int cmp_color_pos_func(const void *p1, const void *p2)
     const gradient_color_t *a = (const gradient_color_t *) p1;
     const gradient_color_t *b = (const gradient_color_t *) p2;
 
-    if (equalEnough(a->pos, b->pos))
+    if (equal_enough(a->pos, b->pos))
         return 0;
 
     return (a->pos < b->pos) ? -1 : 1;
@@ -141,14 +141,14 @@ void free_gradient(gradient_t *gradient)
 
 void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
 {
-    if (equalEnough(left->pos, pos) || equalEnough(left->pos, right->pos)) {
+    if (equal_enough(left->pos, pos) || equal_enough(left->pos, right->pos)) {
         *r = left->r;
         *g = left->g;
         *b = left->b;
         return;
     }
 
-    if (equalEnough(right->pos, pos)) {
+    if (equal_enough(right->pos, pos)) {
         *r = right->r;
         *g = right->g;
         *b = right->b;
@@ -313,7 +313,7 @@ int cmp_doubles_func(const void *p1, const void *p2)
     double a = *((const double *) p1);
     double b = *((const double *) p2);
 
-    if (equalEnough(a, b))
+    if (equal_enough(a, b))
         return 0;
 
     return (a < b) ? -1 : 1;
