@@ -95,11 +95,6 @@ def load_gradient(filename):
 
 
 def color_from_gradient_range(left_color, right_color, pos):
-    if equal_enough(left_color.pos, pos) or equal_enough(left_color.pos, right_color.pos):
-        return left_color.r, left_color.g, left_color.b
-    if equal_enough(right_color.pos, pos):
-        return right_color.r, right_color.g, right_color.b
-
     pos2 = (pos - left_color.pos) / (right_color.pos - left_color.pos)
     r = (right_color.r - left_color.r) * pos2 + left_color.r
     g = (right_color.g - left_color.g) * pos2 + left_color.g

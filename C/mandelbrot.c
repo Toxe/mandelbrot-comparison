@@ -141,20 +141,6 @@ void free_gradient(gradient_t *gradient)
 
 void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
 {
-    if (equal_enough(left->pos, pos) || equal_enough(left->pos, right->pos)) {
-        *r = left->r;
-        *g = left->g;
-        *b = left->b;
-        return;
-    }
-
-    if (equal_enough(right->pos, pos)) {
-        *r = right->r;
-        *g = right->g;
-        *b = right->b;
-        return;
-    }
-
     double d = pos - left->pos;
     double pos2 = d / (right->pos - left->pos);
 
