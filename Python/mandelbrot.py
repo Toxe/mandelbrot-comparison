@@ -19,6 +19,7 @@ import sys
 import math
 
 from time import time
+from math import log, sqrt
 
 
 REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
@@ -53,12 +54,12 @@ class Gradient:
 
 
 # Compare two float values for "enough" equality.
+float_epsilon = sys.float_info.epsilon
+
 def equal_enough(a, b):
     a = abs(a)
     b = abs(b)
-    diff = abs(a - b)
-    largest = max(a, b)
-    return diff <= largest * sys.float_info.epsilon
+    return abs(a - b) <= max(a, b) * float_epsilon
 
 
 def gradient_get_color_at_position(gradient, pos):
@@ -112,15 +113,15 @@ def color_from_gradient(gradient, pos):
     if pos > 1.0:
         pos = 1.0
 
-    left = 0
+    left_color = gradient.colors[0]
 
-    for i in xrange(len(gradient.colors)):
-        right = i
-        if pos >= gradient.colors[left].pos and pos <= gradient.colors[right].pos:
-            return color_from_gradient_range(gradient.colors[left], gradient.colors[right], pos)
-        left = right
+    for right_color in gradient.colors[1:]:
+        if pos >= left_color.pos and pos <= right_color.pos:
+            return color_from_gradient_range(left_color, right_color, pos)
+        left_color = right_color
 
     return None
+
 
 def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel):
     width = height * (float(image_width) / float(image_height))
@@ -131,8 +132,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
     bailout = 20.0
     bailout_squared = bailout * bailout
-    log_log_bailout = math.log(math.log(bailout))
-    log_2 = math.log(2.0)
+    log_log_bailout = log(log(bailout))
+    log_2 = log(2.0)
 
     for i in xrange(max_iterations + 1):
         histogram[i] = 0
@@ -161,8 +162,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
                 iter += 1
 
             if iter < max_iterations:
-                final_magnitude = math.sqrt(x_squared + y_squared)
-                smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (math.log(math.log(final_magnitude)) - log_log_bailout) / log_2)
+                final_magnitude = sqrt(x_squared + y_squared)
+                smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
 
             histogram[iter] += 1
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
