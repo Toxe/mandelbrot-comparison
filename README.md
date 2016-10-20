@@ -6,9 +6,10 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 | Language | Status |
 | -------- | ------ |
 | C        | Done.  |
-| Python   | WIP    |
+| Python   | Done.  |
 | Swift    | TODO   |
 | Java     | Maybe? |
+| PHP      | Maybe? |
 
 ## Some background
 
@@ -24,6 +25,7 @@ I want to compare the shape, size and performance of a simple yet computationall
 4. No multi-threading or parallel code. (At least not for the moment.)
 5. Error handling is pretty poor. Basically if something went wrong the program quits with some error code. Although for the purpose of these programs this is fine.
 6. Keep memory allocations or file access outside the measurement loop.
+7. Just functions, no classes, where feasible.
 
 ## Building
 
