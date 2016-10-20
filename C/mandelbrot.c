@@ -55,10 +55,7 @@ int equal_enough(double a, double b)
     a = fabs(a);
     b = fabs(b);
 
-    double diff = fabs(a - b);
-    double largest = fmax(a, b);
-
-    return diff <= largest * DBL_EPSILON;
+    return fabs(a - b) <= fmax(a, b) * DBL_EPSILON;
 }
 
 gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, double pos)
@@ -141,8 +138,7 @@ void free_gradient(gradient_t *gradient)
 
 void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
 {
-    double d = pos - left->pos;
-    double pos2 = d / (right->pos - left->pos);
+    double pos2 = (pos - left->pos) / (right->pos - left->pos);
 
     *r = ((right->r - left->r) * pos2) + left->r;
     *g = ((right->g - left->g) * pos2) + left->g;
