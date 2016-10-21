@@ -232,7 +232,7 @@ def show_summary(durations):
 
 
 def die(error):
-    print("Error: %d" % error)
+    print("Error: %d" % error, file=sys.stderr)
     sys.exit(error)
 
 
