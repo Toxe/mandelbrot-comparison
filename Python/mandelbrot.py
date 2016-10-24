@@ -72,8 +72,8 @@ def gradient_get_color_at_position(gradient, pos):
 def load_gradient(filename):
     try:
         gradient = Gradient()
-        gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
         gradient.colors.append(GradientColor(0.0, 0.0, 0.0, 0.0))
+        gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
 
         with open(filename, "r") as f:
             for line in f:
