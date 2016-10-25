@@ -323,10 +323,12 @@ double median(const double *values, int num_values)
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
 
-    if (num_values % 2 == 1)
-        return sorted_values[(num_values - 1) / 2];
+    double d;
 
-    double d = (sorted_values[num_values/2 - 1] + sorted_values[num_values/2]) / 2;
+    if (num_values % 2 == 1)
+        d = sorted_values[(num_values - 1) / 2];
+    else
+        d = (sorted_values[num_values/2 - 1] + sorted_values[num_values/2]) / 2;
 
     free(sorted_values);
     return d;
