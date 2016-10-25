@@ -2,7 +2,7 @@
 
 # Python Mandelbrot.
 #
-# Usage: python mandelbrot.py <image_width> <image_height> <iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+# Usage: python mandelbrot.py <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
 # Example: python mandelbrot.py 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
 #
 # Gradient file example:
@@ -211,17 +211,17 @@ def save_image(filename, image_data):
     return True
 
 
-def mean(data):
-    return math.fsum(data) / len(data)
+def mean(values):
+    return math.fsum(values) / len(values)
 
 
-def median(data):
-    data = sorted(data)
-    count = len(data)
+def median(values):
+    values = sorted(values)
+    count = len(values)
     if count % 2 == 1:
-        return data[(count-1) / 2]
+        return values[(count-1) / 2]
     else:
-        return (data[count/2 - 1] + data[count/2]) / 2.0
+        return (values[count/2 - 1] + values[count/2]) / 2.0
 
 
 def show_summary(durations):
@@ -260,17 +260,17 @@ def eval_args():
     if len(sys.argv) < 10:
         die(Error.EVAL_ARGS)
 
-    image_width  = eval_int_arg(sys.argv[1], 1, 100000)
-    image_height = eval_int_arg(sys.argv[2], 1, 100000)
-    iterations   = eval_int_arg(sys.argv[3], 1, 1000000000)
-    repetitions  = eval_int_arg(sys.argv[4], 1, 1000000)
-    center_x     = eval_float_arg(sys.argv[5], -100.0, 100.0)
-    center_y     = eval_float_arg(sys.argv[6], -100.0, 100.0)
-    height       = eval_float_arg(sys.argv[7], -100.0, 100.0)
-    colors       = sys.argv[8]
-    filename     = sys.argv[9]
+    image_width    = eval_int_arg(sys.argv[1], 1, 100000)
+    image_height   = eval_int_arg(sys.argv[2], 1, 100000)
+    max_iterations = eval_int_arg(sys.argv[3], 1, 1000000000)
+    repetitions    = eval_int_arg(sys.argv[4], 1, 1000000)
+    center_x       = eval_float_arg(sys.argv[5], -100.0, 100.0)
+    center_y       = eval_float_arg(sys.argv[6], -100.0, 100.0)
+    height         = eval_float_arg(sys.argv[7], -100.0, 100.0)
+    colors         = sys.argv[8]
+    filename       = sys.argv[9]
 
-    return image_width, image_height, iterations, repetitions, center_x, center_y, height, colors, filename
+    return image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename
 
 
 def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions):
@@ -289,7 +289,7 @@ def go(image_width, image_height, max_iterations, center_x, center_y, height, gr
 
 
 if __name__ == '__main__':
-    image_width, image_height, iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
+    image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
 
     if gradient == None:
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     image_data = bytearray([0] * (image_width * image_height * 3))
     durations = []
 
-    go(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
+    go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
 
     if not save_image(filename, image_data):
         die(Error.SAVE_IMAGE)
