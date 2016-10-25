@@ -1,7 +1,7 @@
 /*
  * C Mandelbrot.
  *
- * Usage: mandelbrot <image_width> <image_height> <iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+ * Usage: mandelbrot <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
  * Example: mandelbrot 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
  *
  * Gradient file example:
@@ -421,21 +421,21 @@ double eval_double_arg(const char *s, double min, double max)
     return value;
 }
 
-int eval_args(int argc, char **argv, int *image_width, int *image_height, int *iterations, int *repetitions,
+int eval_args(int argc, char **argv, int *image_width, int *image_height, int *max_iterations, int *repetitions,
               double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
     if (argc < 10)
         return -1;
 
-    *image_width  = eval_int_arg(argv[1], 1, 100000);
-    *image_height = eval_int_arg(argv[2], 1, 100000);
-    *iterations   = eval_int_arg(argv[3], 1, 1000000000);
-    *repetitions  = eval_int_arg(argv[4], 1, 1000000);
-    *center_x     = eval_double_arg(argv[5], -100.0, 100.0);
-    *center_y     = eval_double_arg(argv[6], -100.0, 100.0);
-    *height       = eval_double_arg(argv[7], -100.0, 100.0);
-    *colors       = argv[8];
-    *filename     = argv[9];
+    *image_width    = eval_int_arg(argv[1], 1, 100000);
+    *image_height   = eval_int_arg(argv[2], 1, 100000);
+    *max_iterations = eval_int_arg(argv[3], 1, 1000000000);
+    *repetitions    = eval_int_arg(argv[4], 1, 1000000);
+    *center_x       = eval_double_arg(argv[5], -100.0, 100.0);
+    *center_y       = eval_double_arg(argv[6], -100.0, 100.0);
+    *height         = eval_double_arg(argv[7], -100.0, 100.0);
+    *colors         = argv[8];
+    *filename       = argv[9];
 
     return 0;
 }
@@ -480,14 +480,14 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
 int main(int argc, char **argv)
 {
     int image_width, image_height;
-    int iterations, repetitions;
+    int max_iterations, repetitions;
     double center_x, center_y, height;
     double *durations;
     char *gradient_filename, *filename;
     unsigned char *image_data;
     gradient_t *gradient;
 
-    if (eval_args(argc, argv, &image_width, &image_height, &iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename) < 0)
+    if (eval_args(argc, argv, &image_width, &image_height, &max_iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename) < 0)
         die(ERROR_EVAL_ARGS);
 
     if (!(gradient = load_gradient(gradient_filename)))
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
     if (!(durations = malloc(repetitions * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
-    go(image_width, image_height, iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
+    go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
 
     if (save_image(filename, image_data, image_width, image_height) < 0)
         die(ERROR_SAVE_IMAGE);
