@@ -157,7 +157,7 @@ int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, 
 
     left = &gradient->colors[0];
 
-    for (int i = 0; i < gradient->num_colors; ++i) {
+    for (int i = 1; i < gradient->num_colors; ++i) {
         right = &gradient->colors[i];
 
         if (pos >= left->pos && pos <= right->pos) {
