@@ -7,7 +7,7 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 | -------- | ------ |
 | C        | Done.  |
 | Python   | Done.  |
-| Swift    | TODO   |
+| Swift    | WIP    |
 | Java     | Maybe? |
 | PHP      | Maybe? |
 
