@@ -21,13 +21,13 @@
 #include <limits.h>
 #include <sys/time.h>
 
-typedef enum error_t {
+typedef enum exitcode_t {
     ERROR_ALLOC_MEMORY = 1,
     ERROR_EVAL_ARGS,
     ERROR_LOAD_GRADIENT,
     ERROR_SAVE_IMAGE,
     ERROR_GETTIME
-} error_t;
+} exitcode_t;
 
 typedef struct
 {
@@ -43,7 +43,7 @@ typedef struct
 } gradient_t;
 
 
-void die(error_t error)
+void die(exitcode_t error)
 {
     fprintf(stderr, "Error: %d\n", error);
     exit(error);

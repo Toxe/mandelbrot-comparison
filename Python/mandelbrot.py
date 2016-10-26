@@ -25,7 +25,7 @@ from math import log, sqrt
 REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
 
 
-class Error:
+class ExitCode:
     ALLOC_MEMORY = 1
     EVAL_ARGS = 2
     LOAD_GRADIENT = 3
@@ -240,25 +240,25 @@ def eval_int_arg(s, min, max):
     try:
         value = int(s)
         if value < min or value > max:
-            die(Error.EVAL_ARGS)
+            die(ExitCode.EVAL_ARGS)
         return value
     except ValueError as e:
-        die(Error.EVAL_ARGS)
+        die(ExitCode.EVAL_ARGS)
 
 
 def eval_float_arg(s, min, max):
     try:
         value = float(s)
         if value < min or value > max or math.isnan(value) or math.isinf(value):
-            die(Error.EVAL_ARGS)
+            die(ExitCode.EVAL_ARGS)
         return value
     except ValueError as e:
-        die(Error.EVAL_ARGS)
+        die(ExitCode.EVAL_ARGS)
 
 
 def eval_args():
     if len(sys.argv) < 10:
-        die(Error.EVAL_ARGS)
+        die(ExitCode.EVAL_ARGS)
 
     image_width    = eval_int_arg(sys.argv[1], 1, 100000)
     image_height   = eval_int_arg(sys.argv[2], 1, 100000)
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     gradient = load_gradient(gradient_filename)
 
     if gradient == None:
-        die(Error.LOAD_GRADIENT)
+        die(ExitCode.LOAD_GRADIENT)
 
     image_data = bytearray([0] * (image_width * image_height * 3))
     durations = []
@@ -301,5 +301,5 @@ if __name__ == '__main__':
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
 
     if not save_image(filename, image_data):
-        die(Error.SAVE_IMAGE)
+        die(ExitCode.SAVE_IMAGE)
     show_summary(durations)
