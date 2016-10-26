@@ -1,9 +1,9 @@
 all: release
 
-debug: mandelbrot.c
+debug:
 	cc -Wall -Wfloat-equal -O0 -g -o mandelbrot mandelbrot.c
 
-release: mandelbrot.c
+release:
 	cc -Wall -Wfloat-equal -O3 -o mandelbrot mandelbrot.c
 
 clean:
