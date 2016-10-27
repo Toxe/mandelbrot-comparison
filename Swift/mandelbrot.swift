@@ -250,7 +250,7 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
     }
 }
 
-func saveImage(_ filename: String, _ imageData: [UInt8]) -> Bool {
+func saveImageData(_ filename: String, _ imageData: [UInt8]) -> Bool {
     do {
         let d = Data(imageData)
         try d.write(to: URL(fileURLWithPath: filename, isDirectory: false))
@@ -294,7 +294,7 @@ func die(_ error: ExitCode) -> Never {
     exit(error.rawValue)
 }
 
-func evalIntArg(_ s: String, min: Int, max: Int) -> Int {
+func evalIntArgument(_ s: String, min: Int, max: Int) -> Int {
     let value = Int(s)
 
     if value == nil {
@@ -304,7 +304,7 @@ func evalIntArg(_ s: String, min: Int, max: Int) -> Int {
     return value!
 }
 
-func evalDoubleArg(_ s: String, min: Double, max: Double) -> Double {
+func evalDoubleArgument(_ s: String, min: Double, max: Double) -> Double {
     let value = Double(s)
 
     if value == nil {
@@ -314,19 +314,19 @@ func evalDoubleArg(_ s: String, min: Double, max: Double) -> Double {
     return value!
 }
 
-func evalArgs(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double, Double, String, String)
+func evalArguments(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double, Double, String, String)
 {
     if arguments.count < 10 {
         die(ExitCode.EVAL_ARGS)
     }
 
-    let imageWidth  = evalIntArg(arguments[1], min: 1, max: 100_000)
-    let imageHeight = evalIntArg(arguments[2], min: 1, max: 100_000)
-    let iterations  = evalIntArg(arguments[3], min: 1, max: 1_000_000_000)
-    let repetitions = evalIntArg(arguments[4], min: 1, max: 1_000_000)
-    let centerX     = evalDoubleArg(arguments[5], min: -100.0, max: 100.0)
-    let centerY     = evalDoubleArg(arguments[6], min: -100.0, max: 100.0)
-    let height      = evalDoubleArg(arguments[7], min: -100.0, max: 100.0)
+    let imageWidth  = evalIntArgument(arguments[1], min: 1, max: 100_000)
+    let imageHeight = evalIntArgument(arguments[2], min: 1, max: 100_000)
+    let iterations  = evalIntArgument(arguments[3], min: 1, max: 1_000_000_000)
+    let repetitions = evalIntArgument(arguments[4], min: 1, max: 1_000_000)
+    let centerX     = evalDoubleArgument(arguments[5], min: -100.0, max: 100.0)
+    let centerY     = evalDoubleArgument(arguments[6], min: -100.0, max: 100.0)
+    let height      = evalDoubleArgument(arguments[7], min: -100.0, max: 100.0)
     let colors      = arguments[8]
     let filename    = arguments[9]
 
@@ -351,7 +351,7 @@ func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: 
 }
 
 func main() {
-    let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = evalArgs(CommandLine.arguments)
+    let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = evalArguments(CommandLine.arguments)
 
     let gradient = loadGradient(gradientFilename)
 
@@ -364,7 +364,7 @@ func main() {
 
     go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient!, &imageData, &durations, repetitions)
 
-    if !saveImage(filename, imageData) {
+    if !saveImageData(filename, imageData) {
         die(ExitCode.SAVE_IMAGE)
     }
 
