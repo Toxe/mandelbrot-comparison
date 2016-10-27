@@ -105,15 +105,15 @@ func loadGradient(_ filename: String) -> Gradient? {
     return gradient
 }
 
-func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Double, _ r: inout Double, _ g: inout Double, _ b: inout Double) {
+func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Double) -> (Double, Double, Double) {
     let pos2 = (pos - left.pos) / (right.pos - left.pos)
 
-    r = ((right.r - left.r) * pos2) + left.r
-    g = ((right.g - left.g) * pos2) + left.g
-    b = ((right.b - left.b) * pos2) + left.b
+    return (((right.r - left.r) * pos2) + left.r,
+            ((right.g - left.g) * pos2) + left.g,
+            ((right.b - left.b) * pos2) + left.b)
 }
 
-func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double, _ r: inout Double, _ g: inout Double, _ b: inout Double) -> Bool {
+func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double) -> (Double, Double, Double) {
     var pos = posInGradient
 
     if (pos < 0.0) {
@@ -131,14 +131,13 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double, _ r: inout
         right = gradient.colors[i]
 
         if pos >= left.pos && pos <= right.pos {
-            colorFromGradientRange(left, right, pos, &r, &g, &b)
-            return true
+            return colorFromGradientRange(left, right, pos)
         }
 
         left = right
     }
 
-    return false
+    return (0.0, 0.0, 0.0)
 }
 
 func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ histogram: inout [Int], _ iterationsPerPixel: inout [Int], _ smoothedDistancesToNextIterationPerPixel: inout [Double]) {
@@ -197,7 +196,6 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
 
             histogram[iter] += 1
             iterationsPerPixel[pixelY * imageWidth + pixelX] = iter  // 1 .. max_iterations
-
         }
     }
 }
@@ -242,7 +240,7 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
                 let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixelY * imageWidth + pixelX]  // 0 .. <1.0
                 let posInGradient = colorOfPreviousIter + smoothedDistanceToNextIteration * (colorOfCurrentIter - colorOfPreviousIter)
 
-                let _ = colorFromGradient(gradient, posInGradient, &r, &g, &b)
+                (r, g, b) = colorFromGradient(gradient, posInGradient)
             }
 
             imageData[3 * (pixelY * imageWidth + pixelX) + 0] = UInt8(255.0 * r)
