@@ -48,9 +48,9 @@ func equalEnough(_ a: Double, _ b: Double) -> Bool {
 }
 
 func gradientGetColorAtPosition(_ gradient: Gradient, _ pos: Double) -> GradientColor? {
-    for i in 0 ..< gradient.colors.count {
-        if equalEnough(gradient.colors[i].pos, pos) {
-            return gradient.colors[i]
+    for color in gradient.colors {
+        if equalEnough(color.pos, pos) {
+            return color
         }
     }
 
@@ -72,8 +72,7 @@ func loadGradient(_ filename: String) -> Gradient? {
         let lines = contentsOfFile.components(separatedBy: "\n")
         let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)")
 
-        for i in 0 ..< lines.count {
-            let line = lines[i]
+        for line in lines {
             let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.characters.count))
 
             if matches.count == 1 {
@@ -124,11 +123,10 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double) -> (Double
         pos = 1.0
     }
 
-    var left, right: GradientColor
-    left = gradient.colors[0]
+    var left = gradient.colors[0]
 
     for i in 1 ..< gradient.colors.count {
-        right = gradient.colors[i]
+        let right = gradient.colors[i]
 
         if pos >= left.pos && pos <= right.pos {
             return colorFromGradientRange(left, right, pos)
@@ -264,8 +262,8 @@ func saveImageData(_ filename: String, _ imageData: [UInt8]) -> Bool {
 func mean(_ values: [Double]) -> Double {
     var sum = 0.0
 
-    for i in 0 ..< values.count {
-        sum += values[i]
+    for value in values {
+        sum += value
     }
 
     return sum / Double(values.count)
