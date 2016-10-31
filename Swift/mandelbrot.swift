@@ -57,10 +57,6 @@ func gradientGetColorAtPosition(_ gradient: Gradient, _ pos: Double) -> Gradient
     return nil
 }
 
-func cmpColorPosFunc(_ a: GradientColor, _ b: GradientColor) -> Bool {
-    return a.pos < b.pos
-}
-
 func loadGradient(_ filename: String) -> Gradient? {
     let gradient = Gradient()
 
@@ -100,7 +96,8 @@ func loadGradient(_ filename: String) -> Gradient? {
         return nil
     }
 
-    gradient.colors.sort(by: cmpColorPosFunc)
+    gradient.colors.sort { $0.pos < $1.pos }
+
     return gradient
 }
 
