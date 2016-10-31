@@ -253,7 +253,8 @@ void mandelbrot_colorize(int image_width, int image_height, int max_iterations, 
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            int iter = iterations_per_pixel[pixel_y * image_width + pixel_x];  // 1 .. max_iterations
+            int pixel = pixel_y * image_width + pixel_x;
+            int iter = iterations_per_pixel[pixel];  // 1 .. max_iterations
             double r, g, b;
 
             if (iter == max_iterations) {
@@ -266,15 +267,15 @@ void mandelbrot_colorize(int image_width, int image_height, int max_iterations, 
                 double color_of_previous_iter = normalized_colors[iter - 1];
                 double color_of_current_iter  = normalized_colors[iter];
 
-                double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x];  // 0 .. <1.0
+                double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel];  // 0 .. <1.0
                 double pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
 
                 color_from_gradient(gradient, pos_in_gradient, &r, &g, &b);
             }
 
-            image_data[3 * (pixel_y * image_width + pixel_x) + 0] = (unsigned char) (255.0 * r);
-            image_data[3 * (pixel_y * image_width + pixel_x) + 1] = (unsigned char) (255.0 * g);
-            image_data[3 * (pixel_y * image_width + pixel_x) + 2] = (unsigned char) (255.0 * b);
+            image_data[3 * pixel + 0] = (unsigned char) (255.0 * r);
+            image_data[3 * pixel + 1] = (unsigned char) (255.0 * g);
+            image_data[3 * pixel + 2] = (unsigned char) (255.0 * b);
         }
     }
 }

@@ -222,7 +222,8 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
 
     for pixelY in 0 ..< imageHeight {
         for pixelX in 0 ..< imageWidth {
-            let iter = iterationsPerPixel[pixelY * imageWidth + pixelX]  // 1 .. max_iterations
+            let pixel = pixelY * imageWidth + pixelX
+            let iter = iterationsPerPixel[pixel]  // 1 .. max_iterations
             var r = 0.0, g = 0.0, b = 0.0
 
             if iter == maxIterations {
@@ -235,15 +236,15 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
                 let colorOfPreviousIter = normalizedColors[iter - 1]
                 let colorOfCurrentIter  = normalizedColors[iter]
 
-                let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixelY * imageWidth + pixelX]  // 0 .. <1.0
+                let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixel]  // 0 .. <1.0
                 let posInGradient = colorOfPreviousIter + smoothedDistanceToNextIteration * (colorOfCurrentIter - colorOfPreviousIter)
 
                 (r, g, b) = colorFromGradient(gradient, posInGradient)
             }
 
-            imageData[3 * (pixelY * imageWidth + pixelX) + 0] = UInt8(255.0 * r)
-            imageData[3 * (pixelY * imageWidth + pixelX) + 1] = UInt8(255.0 * g)
-            imageData[3 * (pixelY * imageWidth + pixelX) + 2] = UInt8(255.0 * b)
+            imageData[3 * pixel + 0] = UInt8(255.0 * r)
+            imageData[3 * pixel + 1] = UInt8(255.0 * g)
+            imageData[3 * pixel + 2] = UInt8(255.0 * b)
         }
     }
 }
