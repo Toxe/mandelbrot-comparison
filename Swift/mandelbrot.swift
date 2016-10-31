@@ -22,19 +22,12 @@ enum ExitCode: Int32 {
     case GETTIME
 }
 
-class GradientColor {
+struct GradientColor {
     var pos: Double
     var r, g, b: Double
-
-    init(_ pos: Double, _ r: Double, _ g: Double, _ b: Double) {
-        self.pos = pos
-        self.r = r
-        self.g = g
-        self.b = b
-    }
 }
 
-class Gradient {
+struct Gradient {
     var colors = [GradientColor]()
 }
 
@@ -47,10 +40,10 @@ func equalEnough(_ a: Double, _ b: Double) -> Bool {
     return abs(absA - absB) <= max(absA, absB) * DBL_EPSILON
 }
 
-func gradientGetColorAtPosition(_ gradient: Gradient, _ pos: Double) -> GradientColor? {
-    for color in gradient.colors {
-        if equalEnough(color.pos, pos) {
-            return color
+func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Double) -> Int? {
+    for i in 0..<gradient.colors.count {
+        if equalEnough(gradient.colors[i].pos, pos) {
+            return i
         }
     }
 
@@ -58,10 +51,10 @@ func gradientGetColorAtPosition(_ gradient: Gradient, _ pos: Double) -> Gradient
 }
 
 func loadGradient(_ filename: String) -> Gradient? {
-    let gradient = Gradient()
+    var gradient = Gradient()
 
-    gradient.colors.append(GradientColor(0.0, 0.0, 0.0, 0.0))
-    gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
+    gradient.colors.append(GradientColor(pos: 0.0, r: 0.0, g: 0.0, b: 0.0))
+    gradient.colors.append(GradientColor(pos: 1.0, r: 1.0, g: 1.0, b: 1.0))
 
     do {
         let contentsOfFile = try String(contentsOfFile: filename)
@@ -79,14 +72,12 @@ func loadGradient(_ filename: String) -> Gradient? {
                     let b = Double((line as NSString).substring(with: matches[0].rangeAt(4)))
 
                     if pos != nil && r != nil && g != nil && b != nil {
-                        let color = gradientGetColorAtPosition(gradient, pos!)
-
-                        if color != nil {
-                            color!.r = r!
-                            color!.g = g!
-                            color!.b = b!
+                        if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
+                            gradient.colors[index].r = r!
+                            gradient.colors[index].g = g!
+                            gradient.colors[index].b = b!
                         } else {
-                            gradient.colors.append(GradientColor(pos!, r!, g!, b!))
+                            gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
                         }
                     }
                 }
