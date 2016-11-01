@@ -187,20 +187,21 @@ def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, ima
 
             if iter == max_iterations:
                 # pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
-                r = 0.0
-                g = 0.0
-                b = 0.0
+                image_data[3 * pixel + 0] = 0
+                image_data[3 * pixel + 1] = 0
+                image_data[3 * pixel + 2] = 0
             else:
                 # we use the color of the previous iteration in order to cover the full gradient range
                 color_of_previous_iter = normalized_colors[iter - 1]
                 color_of_current_iter  = normalized_colors[iter]
                 smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel]  # 0 .. <1.0
                 pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter)
+
                 r, g, b = color_from_gradient(gradient, pos_in_gradient)
 
-            image_data[3 * pixel + 0] = int(255.0 * r)
-            image_data[3 * pixel + 1] = int(255.0 * g)
-            image_data[3 * pixel + 2] = int(255.0 * b)
+                image_data[3 * pixel + 0] = int(255.0 * r)
+                image_data[3 * pixel + 1] = int(255.0 * g)
+                image_data[3 * pixel + 2] = int(255.0 * b)
 
 
 def save_image(filename, image_data):
