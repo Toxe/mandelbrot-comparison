@@ -138,7 +138,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
     let logLogBailout = log(log(bailout))
     let log2 = log(2.0)
 
-    var xSquared = 0.0, ySquared = 0.0
+    var finalMagnitude = 0.0
 
     for i in 0 ..< histogram.count {
         histogram[i] = 0
@@ -156,10 +156,11 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
             var iter = 0
 
             while iter < maxIterations {
-                xSquared = x*x
-                ySquared = y*y
+                let xSquared = x*x
+                let ySquared = y*y
 
                 if xSquared + ySquared >= bailoutSquared {
+                    finalMagnitude = sqrt(xSquared + ySquared)
                     break
                 }
 
@@ -170,13 +171,14 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
                 iter += 1
             }
 
+            let pixel = pixelY * imageWidth + pixelX
+
             if iter < maxIterations {
-                let finalMagnitude = sqrt(xSquared + ySquared)
-                smoothedDistancesToNextIterationPerPixel[pixelY * imageWidth + pixelX] = 1.0 - min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)
+                smoothedDistancesToNextIterationPerPixel[pixel] = 1.0 - min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)
                 histogram[iter] += 1  // no need to count histogram[max_iterations]
             }
 
-            iterationsPerPixel[pixelY * imageWidth + pixelX] = iter  // 1 .. max_iterations
+            iterationsPerPixel[pixel] = iter  // 1 .. max_iterations
         }
     }
 }

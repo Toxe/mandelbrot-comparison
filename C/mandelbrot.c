@@ -186,7 +186,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
     const double log_log_bailout = log(log(bailout));
     const double log_2 = log(2.0);
 
-    double x_squared, y_squared;
+    double final_magnitude = 0.0;
 
     memset(histogram, 0, (max_iterations + 1) * sizeof(int));
 
@@ -202,11 +202,13 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
             int iter = 0;
 
             while (iter < max_iterations) {
-                x_squared = x*x;
-                y_squared = y*y;
+                const double x_squared = x*x;
+                const double y_squared = y*y;
 
-                if (x_squared + y_squared >= bailout_squared)
+                if (x_squared + y_squared >= bailout_squared) {
+                    final_magnitude = sqrt(x_squared + y_squared);
                     break;
+                }
 
                 const double xtemp = x_squared - y_squared + x0;
                 y = 2.0*x*y + y0;
@@ -215,13 +217,14 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
                 ++iter;
             }
 
+            const int pixel = pixel_y * image_width + pixel_x;
+
             if (iter < max_iterations) {
-                const double final_magnitude = sqrt(x_squared + y_squared);
-                smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
+                smoothed_distances_to_next_iteration_per_pixel[pixel] = 1.0 - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
                 ++histogram[iter];  // no need to count histogram[max_iterations]
             }
 
-            iterations_per_pixel[pixel_y * image_width + pixel_x] = iter;  // 1 .. max_iterations
+            iterations_per_pixel[pixel] = iter;  // 1 .. max_iterations
         }
     }
 }
