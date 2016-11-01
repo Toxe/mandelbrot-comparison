@@ -159,8 +159,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             if iter < max_iterations:
                 final_magnitude = sqrt(x_squared + y_squared)
                 smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
+                histogram[iter] += 1  # no need to count histogram[max_iterations]
 
-            histogram[iter] += 1
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
 
 

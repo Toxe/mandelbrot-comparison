@@ -218,9 +218,9 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
             if (iter < max_iterations) {
                 const double final_magnitude = sqrt(x_squared + y_squared);
                 smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
+                ++histogram[iter];  // no need to count histogram[max_iterations]
             }
 
-            ++histogram[iter];
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter;  // 1 .. max_iterations
         }
     }

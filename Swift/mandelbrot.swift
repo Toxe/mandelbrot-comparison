@@ -173,9 +173,9 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
             if iter < maxIterations {
                 let finalMagnitude = sqrt(xSquared + ySquared)
                 smoothedDistancesToNextIterationPerPixel[pixelY * imageWidth + pixelX] = 1.0 - min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)
+                histogram[iter] += 1  // no need to count histogram[max_iterations]
             }
 
-            histogram[iter] += 1
             iterationsPerPixel[pixelY * imageWidth + pixelX] = iter  // 1 .. max_iterations
         }
     }
