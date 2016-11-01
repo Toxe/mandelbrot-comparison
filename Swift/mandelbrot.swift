@@ -133,16 +133,12 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
     let yTop    = centerY + height / 2.0
 //  let yBottom = centerY - height / 2.0
 
-    var iter: Int
-    var x0, y0: Double
-    var x, y: Double
-    var xtemp: Double
-    var xSquared = 0.0, ySquared = 0.0
-
     let bailout = 20.0
     let bailoutSquared = bailout * bailout
     let logLogBailout = log(log(bailout))
     let log2 = log(2.0)
+
+    var xSquared = 0.0, ySquared = 0.0
 
     for i in 0 ..< histogram.count {
         histogram[i] = 0
@@ -150,14 +146,14 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
 
     for pixelY in 0 ..< imageHeight {
         for pixelX in 0 ..< imageWidth {
-            x0 = xLeft + width * (Double(pixelX) / Double(imageWidth))
-            y0 = yTop - height * (Double(pixelY) / Double(imageHeight))
+            let x0 = xLeft + width * (Double(pixelX) / Double(imageWidth))
+            let y0 = yTop - height * (Double(pixelY) / Double(imageHeight))
 
-            x = 0.0
-            y = 0.0
+            var x = 0.0
+            var y = 0.0
 
             // iteration, will be from 1 to max_iterations once the loop is done
-            iter = 0
+            var iter = 0
 
             while iter < maxIterations {
                 xSquared = x*x
@@ -167,7 +163,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
                     break
                 }
 
-                xtemp = xSquared - ySquared + x0
+                let xtemp = xSquared - ySquared + x0
                 y = 2.0*x*y + y0
                 x = xtemp
 

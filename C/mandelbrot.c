@@ -174,36 +174,32 @@ int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, 
 void mandelbrot_calc(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height,
                      int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel)
 {
-    double width = height * ((double) image_width / (double) image_height);
+    const double width = height * ((double) image_width / (double) image_height);
 
-    double x_left   = center_x - width / 2.0;
- // double x_right  = center_x + width / 2.0;
-    double y_top    = center_y + height / 2.0;
- // double y_bottom = center_y - height / 2.0;
-
-    int iter;
-    double x0, y0;
-    double x, y;
-    double xtemp;
-    double x_squared, y_squared;
+    const double x_left   = center_x - width / 2.0;
+ // const double x_right  = center_x + width / 2.0;
+    const double y_top    = center_y + height / 2.0;
+ // const double y_bottom = center_y - height / 2.0;
 
     const double bailout = 20.0;
     const double bailout_squared = bailout * bailout;
     const double log_log_bailout = log(log(bailout));
     const double log_2 = log(2.0);
 
+    double x_squared, y_squared;
+
     memset(histogram, 0, (max_iterations + 1) * sizeof(int));
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            x0 = x_left + width * ((double) pixel_x / (double) image_width);
-            y0 = y_top - height * ((double) pixel_y / (double) image_height);
+            const double x0 = x_left + width * ((double) pixel_x / (double) image_width);
+            const double y0 = y_top - height * ((double) pixel_y / (double) image_height);
 
-            x = 0.0;
-            y = 0.0;
+            double x = 0.0;
+            double y = 0.0;
 
             // iteration, will be from 1 to max_iterations once the loop is done
-            iter = 0;
+            int iter = 0;
 
             while (iter < max_iterations) {
                 x_squared = x*x;
@@ -212,7 +208,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
                 if (x_squared + y_squared >= bailout_squared)
                     break;
 
-                xtemp = x_squared - y_squared + x0;
+                const double xtemp = x_squared - y_squared + x0;
                 y = 2.0*x*y + y0;
                 x = xtemp;
 
@@ -220,7 +216,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
             }
 
             if (iter < max_iterations) {
-                double final_magnitude = sqrt(x_squared + y_squared);
+                const double final_magnitude = sqrt(x_squared + y_squared);
                 smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
             }
 
