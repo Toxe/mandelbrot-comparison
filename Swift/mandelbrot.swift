@@ -278,23 +278,19 @@ func die(_ error: ExitCode) -> Never {
 }
 
 func evalIntArgument(_ s: String, min: Int, max: Int) -> Int {
-    let value = Int(s)
-
-    if value == nil {
+    guard let value = Int(s) else {
         die(ExitCode.EVAL_ARGS)
     }
 
-    return value!
+    return value
 }
 
 func evalDoubleArgument(_ s: String, min: Double, max: Double) -> Double {
-    let value = Double(s)
-
-    if value == nil {
+    guard let value = Double(s) else {
         die(ExitCode.EVAL_ARGS)
     }
 
-    return value!
+    return value
 }
 
 func evalArguments(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double, Double, String, String)
@@ -336,16 +332,14 @@ func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: 
 func main() {
     let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = evalArguments(CommandLine.arguments)
 
-    let gradient = loadGradient(gradientFilename)
-
-    if gradient == nil {
+    guard let gradient = loadGradient(gradientFilename) else {
         die(ExitCode.LOAD_GRADIENT)
     }
 
     var imageData = [UInt8](repeating: 0, count: imageWidth * imageHeight * 3)
     var durations = [Double]()
 
-    go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient!, &imageData, &durations, repetitions)
+    go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient, &imageData, &durations, repetitions)
 
     if !saveImageData(filename, imageData) {
         die(ExitCode.SAVE_IMAGE)
