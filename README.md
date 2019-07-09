@@ -6,26 +6,24 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 | Language | Status |
 | -------- | ------ |
 | C        | Done.  |
+| C++      | WIP    |
 | Python   | Done.  |
-| Swift    | WIP    |
-| Java     | Maybe? |
+| Swift    | Done.  |
 | PHP      | Maybe? |
 
 ## Some background
 
-I made these programs while learning Swift: I needed a not too simple yet on the other hand not too complex example program to translate into Swift. And I wanted something for performance measurements, to compare Swift with C. That's how this multi-language comparison was born.
+I made these programs while learning Swift: I needed a not too simple yet on the other hand not too complex example program to translate into Swift. And I wanted something for performance measurements, to compare Swift with C. That's how this multi-language comparison started.
 
 ## Some thoughts what these programs are about
 
 I want to compare the shape, size and performance of a simple yet computationally intensive program between different languages. The programs should be real life examples without too much fancy stuff.
 
 1. The whole code in one file.
-2. No dependencies. Just the language and standard library.
+2. No dependencies. Just the base language and standard library.
 3. Simple code, nothing fancy. That means no assembly optimizations or calling C functions from within Python that do all the work.
-4. No multi-threading or parallel code. (At least not for the moment.)
-5. Error handling is pretty poor. Basically if something went wrong the program quits with some error code. Although for the purpose of these programs this is fine.
-6. Keep memory allocations or file access outside the measurement loop.
-7. Just functions, no classes, where feasible.
+4. Error handling is pretty poor. Basically if something went wrong the program quits with some error code. Although for the purpose of these programs this is fine.
+5. Keep memory allocations or file access outside the measurement loop.
 
 ## Building
 
