@@ -37,7 +37,7 @@ func equalEnough(_ a: Double, _ b: Double) -> Bool {
     let absA = abs(a)
     let absB = abs(b)
 
-    return abs(absA - absB) <= max(absA, absB) * DBL_EPSILON
+    return abs(absA - absB) <= max(absA, absB) * Double.ulpOfOne
 }
 
 func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Double) -> Int? {
@@ -62,14 +62,14 @@ func loadGradient(_ filename: String) -> Gradient? {
         let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)")
 
         for line in lines {
-            let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.characters.count))
+            let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.count))
 
             if matches.count == 1 {
                 if matches[0].numberOfRanges == 4+1 {
-                    let pos = Double((line as NSString).substring(with: matches[0].rangeAt(1)))
-                    let r = Double((line as NSString).substring(with: matches[0].rangeAt(2)))
-                    let g = Double((line as NSString).substring(with: matches[0].rangeAt(3)))
-                    let b = Double((line as NSString).substring(with: matches[0].rangeAt(4)))
+                    let pos = Double((line as NSString).substring(with: matches[0].range(at: 1)))
+                    let r = Double((line as NSString).substring(with: matches[0].range(at: 2)))
+                    let g = Double((line as NSString).substring(with: matches[0].range(at: 3)))
+                    let b = Double((line as NSString).substring(with: matches[0].range(at: 4)))
 
                     if pos != nil && r != nil && g != nil && b != nil {
                         if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
