@@ -18,20 +18,12 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <regex>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/time.h>
 
 enum class Error {
     AllocMemory = 1,
@@ -58,12 +50,14 @@ void die(Error error)
 }
 
 // Compare two double values for "enough" equality.
-int equal_enough(double a, double b)
+bool equal_enough(double a, double b)
 {
+    constexpr double epsilon = std::numeric_limits<double>::epsilon();
+
     a = std::abs(a);
     b = std::abs(b);
 
-    return std::abs(a - b) <= std::max(a, b) * DBL_EPSILON;
+    return std::abs(a - b) <= std::max(a, b) * epsilon;
 }
 
 GradientColor* gradient_get_color_at_position(Gradient& gradient, double pos)
