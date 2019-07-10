@@ -1,0 +1,12 @@
+---
+Language:        Cpp
+BasedOnStyle:  WebKit
+BreakInheritanceList: AfterColon
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+Cpp11BracedListStyle: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+SpaceAfterCStyleCast: true
+SpaceBeforeCpp11BracedList: false
+TabWidth:        4
+...
