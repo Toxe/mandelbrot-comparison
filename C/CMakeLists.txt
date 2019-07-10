@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.14)
+
 add_executable(mandelbrot_c mandelbrot.c)
 target_compile_features(mandelbrot_c PUBLIC c_std_11)
 target_compile_options(mandelbrot_c PRIVATE -Wall -Wextra -Wmost -pedantic -Wfloat-equal)
