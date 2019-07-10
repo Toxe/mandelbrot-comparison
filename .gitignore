@@ -1,3 +1,5 @@
 *.gradient
 *.raw
 *.png
+build*
+.vscode
