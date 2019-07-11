@@ -232,8 +232,6 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
 void mandelbrot_colorize(int image_width, int image_height, int max_iterations, gradient_t *gradient,
                          unsigned char *image_data, int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel, double *normalized_colors)
 {
-    memset(normalized_colors, 0, (max_iterations + 1) * sizeof(double));
-
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
     int total_iterations = 0;

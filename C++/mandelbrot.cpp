@@ -197,8 +197,6 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
 void mandelbrot_colorize(const int image_width, const int image_height, const int max_iterations, const Gradient& gradient,
                          unsigned char* image_data, const std::vector<int>& histogram, const std::vector<int>& iterations_per_pixel, const std::vector<double>& smoothed_distances_to_next_iteration_per_pixel, std::vector<double>& normalized_colors)
 {
-    std::fill(normalized_colors.begin(), normalized_colors.end(), 0.0);
-
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
     const double total_iterations = std::accumulate(std::next(histogram.cbegin()), std::prev(histogram.cend()), 0);

@@ -165,9 +165,6 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
 
 def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors):
-    for i in xrange(max_iterations + 1):
-        normalized_colors[i] = 0.0
-
     # Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     # are points in the Mandelbrot Set).
     total_iterations = float(sum(histogram[1:-1]))
