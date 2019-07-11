@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
+project("Mandelbrot Comparison (C++)" LANGUAGES CXX)
 
 add_executable(mandelbrot_cpp mandelbrot.cpp)
 target_compile_features(mandelbrot_cpp PUBLIC cxx_std_17)
