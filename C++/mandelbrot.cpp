@@ -60,7 +60,7 @@ bool equal_enough(double a, double b)
     return std::abs(a - b) <= std::max(a, b) * epsilon;
 }
 
-GradientColor* gradient_get_color_at_position(Gradient& gradient, double pos)
+GradientColor* gradient_get_color_at_position(Gradient& gradient, const double pos)
 {
     for (GradientColor& col : gradient.colors)
         if (equal_enough(col.pos, pos))
@@ -108,7 +108,7 @@ Gradient load_gradient(const std::string& filename)
 
 void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const double pos, double& r, double& g, double& b)
 {
-    double pos2 = (pos - left.pos) / (right.pos - left.pos);
+    const double pos2 = (pos - left.pos) / (right.pos - left.pos);
 
     r = ((right.r - left.r) * pos2) + left.r;
     g = ((right.g - left.g) * pos2) + left.g;
@@ -146,8 +146,8 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
     const double y_top    = center_y + height / 2.0;
  // const double y_bottom = center_y - height / 2.0;
 
-    const double bailout = 20.0;
-    const double bailout_squared = bailout * bailout;
+    constexpr double bailout = 20.0;
+    constexpr double bailout_squared = bailout * bailout;
     const double log_log_bailout = std::log(std::log(bailout));
     const double log_2 = std::log(2.0);
 
@@ -212,8 +212,8 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            int pixel = pixel_y * image_width + pixel_x;
-            int iter = iterations_per_pixel[static_cast<std::size_t>(pixel)];  // 1 .. max_iterations
+            const int pixel = pixel_y * image_width + pixel_x;
+            const int iter = iterations_per_pixel[static_cast<std::size_t>(pixel)];  // 1 .. max_iterations
 
             if (iter == max_iterations) {
                 // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
@@ -222,11 +222,11 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
                 image_data[3 * pixel + 2] = 0;
             } else {
                 // we use the color of the previous iteration in order to cover the full gradient range
-                double color_of_previous_iter = normalized_colors[static_cast<std::size_t>(iter - 1)];
-                double color_of_current_iter  = normalized_colors[static_cast<std::size_t>(iter)];
+                const double color_of_previous_iter = normalized_colors[static_cast<std::size_t>(iter - 1)];
+                const double color_of_current_iter  = normalized_colors[static_cast<std::size_t>(iter)];
 
-                double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[static_cast<std::size_t>(pixel)];  // 0 .. <1.0
-                double pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
+                const double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[static_cast<std::size_t>(pixel)];  // 0 .. <1.0
+                const double pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
 
                 double r, g, b;
                 color_from_gradient(gradient, pos_in_gradient, r, g, b);
@@ -338,7 +338,7 @@ std::tuple<int, int, int, int, double, double, double, std::string, std::string>
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename);
 }
 
-void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, unsigned char* image_data, std::vector<double>& durations, int repetitions)
+void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, unsigned char* image_data, std::vector<double>& durations, const int repetitions)
 {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<int> histogram(static_cast<std::size_t>(max_iterations + 1));
@@ -347,10 +347,10 @@ void go(const int image_width, const int image_height, const int max_iterations,
     std::vector<double> smoothed_distances_to_next_iteration_per_pixel(static_cast<std::size_t>(image_width * image_height));
 
     for (int i = 0; i < repetitions; ++i) {
-        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto t1 = std::chrono::high_resolution_clock::now();
         mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel);
         mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors);
-        auto t2 = std::chrono::high_resolution_clock::now();
+        const auto t2 = std::chrono::high_resolution_clock::now();
 
         durations.push_back(std::chrono::duration<double>{t2 - t1}.count());
     }
