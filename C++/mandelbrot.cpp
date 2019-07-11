@@ -276,10 +276,14 @@ void show_summary(const std::vector<double>& durations)
     if (durations.size() == 1) {
         std::cout << durations[0] << " s" << std::endl;
     } else {
-        std::cout << "mean: " << mean(durations) << " s, median: " << median(durations) << " s (repetitions=" << durations.size() << ") [";
+        std::vector<double> sorted_values{durations};
+        std::sort(sorted_values.begin(), sorted_values.end());
 
-        for (auto d : durations)
-            std::cout << d << ", ";
+        std::cout << "mean: " << mean(sorted_values) << " s, median: " << median(sorted_values) << " s (repetitions=" << sorted_values.size() << ") ["
+                  << sorted_values[0];
+
+        for (auto p = std::next(sorted_values.cbegin()); p != sorted_values.cend(); ++p)
+            std::cout << ", " << *p;
 
         std::cout << "]" << std::endl;
     }
