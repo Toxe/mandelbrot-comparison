@@ -207,9 +207,9 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
     // histogram[max_iterations] (which are points in the Mandelbrot Set).
     int running_total = 0;
 
-    for (int i = 1; i < max_iterations; ++i) {
-        running_total += histogram[static_cast<std::size_t>(i)];
-        normalized_colors[static_cast<std::size_t>(i)] = static_cast<double>(running_total) / static_cast<double>(total_iterations);
+    for (std::size_t i = 1; i < static_cast<std::size_t>(max_iterations); ++i) {
+        running_total += histogram[i];
+        normalized_colors[i] = running_total / total_iterations;
     }
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
