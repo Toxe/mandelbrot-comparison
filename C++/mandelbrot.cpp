@@ -201,10 +201,7 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
 
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
-    int total_iterations = 0;
-
-    for (int i = 1; i < max_iterations; ++i)
-        total_iterations += histogram[static_cast<std::size_t>(i)];
+    const double total_iterations = std::accumulate(std::next(histogram.cbegin()), std::prev(histogram.cend()), 0);
 
     // Normalize the colors (0.0 .. 1.0) based on how often they are used in the image, not counting
     // histogram[max_iterations] (which are points in the Mandelbrot Set).
