@@ -354,8 +354,7 @@ void go(const int image_width, const int image_height, const int max_iterations,
         mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors);
         auto t2 = std::chrono::high_resolution_clock::now();
 
-        std::chrono::duration<double> diff = t2 - t1;
-        durations.push_back(diff.count());
+        durations.push_back(std::chrono::duration<double>{t2 - t1}.count());
     }
 }
 
