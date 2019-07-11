@@ -33,6 +33,10 @@ enum class Error {
     GetTime
 };
 
+struct PixelColor {
+    unsigned char r, g, b;
+};
+
 struct GradientColor {
     double pos;
     double r, g, b;
@@ -106,16 +110,16 @@ Gradient load_gradient(const std::string& filename)
     return gradient;
 }
 
-void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const double pos, double& r, double& g, double& b)
+void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const double pos, PixelColor& pixel_color)
 {
     const double pos2 = (pos - left.pos) / (right.pos - left.pos);
 
-    r = ((right.r - left.r) * pos2) + left.r;
-    g = ((right.g - left.g) * pos2) + left.g;
-    b = ((right.b - left.b) * pos2) + left.b;
+    pixel_color.r = static_cast<unsigned char>(255.0 * (((right.r - left.r) * pos2) + left.r));
+    pixel_color.g = static_cast<unsigned char>(255.0 * (((right.g - left.g) * pos2) + left.g));
+    pixel_color.b = static_cast<unsigned char>(255.0 * (((right.b - left.b) * pos2) + left.b));
 }
 
-bool color_from_gradient(const Gradient& gradient, double pos, double& r, double& g, double& b)
+void color_from_gradient(const Gradient& gradient, double pos, PixelColor& pixel_color)
 {
     if (pos < 0.0)
         pos = 0.0;
@@ -128,12 +132,10 @@ bool color_from_gradient(const Gradient& gradient, double pos, double& r, double
         const GradientColor& right = gradient.colors[i];
 
         if (pos >= left.pos && pos <= right.pos) {
-            color_from_gradient_range(left, right, pos, r, g, b);
-            return true;
+            color_from_gradient_range(left, right, pos, pixel_color);
+            break;
         }
     }
-
-    return false;
 }
 
 void mandelbrot_calc(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height,
@@ -195,7 +197,7 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
 }
 
 void mandelbrot_colorize(const int image_width, const int image_height, const int max_iterations, const Gradient& gradient,
-                         unsigned char* image_data, const std::vector<int>& histogram, const std::vector<int>& iterations_per_pixel, const std::vector<double>& smoothed_distances_to_next_iteration_per_pixel, std::vector<double>& normalized_colors)
+                         PixelColor* image_data, const std::vector<int>& histogram, const std::vector<int>& iterations_per_pixel, const std::vector<double>& smoothed_distances_to_next_iteration_per_pixel, std::vector<double>& normalized_colors)
 {
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
@@ -217,9 +219,9 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
 
             if (iter == max_iterations) {
                 // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
-                image_data[3 * pixel + 0] = 0;
-                image_data[3 * pixel + 1] = 0;
-                image_data[3 * pixel + 2] = 0;
+                image_data[pixel].r = 0;
+                image_data[pixel].g = 0;
+                image_data[pixel].b = 0;
             } else {
                 // we use the color of the previous iteration in order to cover the full gradient range
                 const double color_of_previous_iter = normalized_colors[static_cast<std::size_t>(iter - 1)];
@@ -228,25 +230,22 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
                 const double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[static_cast<std::size_t>(pixel)];  // 0 .. <1.0
                 const double pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
 
-                double r, g, b;
-                color_from_gradient(gradient, pos_in_gradient, r, g, b);
-
-                image_data[3 * pixel + 0] = static_cast<unsigned char>(255.0 * r);
-                image_data[3 * pixel + 1] = static_cast<unsigned char>(255.0 * g);
-                image_data[3 * pixel + 2] = static_cast<unsigned char>(255.0 * b);
+                color_from_gradient(gradient, pos_in_gradient, image_data[pixel]);
             }
         }
     }
 }
 
-bool save_image(const std::string& filename, const unsigned char* image_data, const int width, const int height)
+bool save_image(const std::string& filename, const PixelColor* image_data, const int width, const int height)
 {
     std::ofstream out{filename};
 
     if (!out.is_open())
         return false;
 
-    out.write(reinterpret_cast<const char*>(image_data), 3 * width * height);
+    for (int i = 0; i < width * height; ++i)
+        out << image_data[i].r << image_data[i].g << image_data[i].b;
+
     return true;
 }
 
@@ -338,7 +337,7 @@ std::tuple<int, int, int, int, double, double, double, std::string, std::string>
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename);
 }
 
-void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, unsigned char* image_data, std::vector<double>& durations, const int repetitions)
+void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, PixelColor* image_data, std::vector<double>& durations, const int repetitions)
 {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<int> histogram(static_cast<std::size_t>(max_iterations + 1));
@@ -361,7 +360,7 @@ int main(int argc, char const* argv[])
     auto [image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename] = eval_args(argc, argv);
     auto gradient = load_gradient(gradient_filename);
 
-    unsigned char* image_data = new unsigned char[static_cast<unsigned long>(image_width * image_height * 3)];
+    PixelColor* image_data = new PixelColor[static_cast<unsigned long>(image_width * image_height)];
 
     if (!image_data)
         die(Error::AllocMemory);
