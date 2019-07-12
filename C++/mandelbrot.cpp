@@ -159,8 +159,9 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
                     break;
                 }
 
+                const double xtemp = x_squared - y_squared + x0;
                 y = 2.0*x*y + y0;
-                x = x_squared - y_squared + x0;
+                x = xtemp;
 
                 ++iter;
             }
