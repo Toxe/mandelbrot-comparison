@@ -23,8 +23,8 @@ enum ExitCode: Int32 {
 }
 
 struct GradientColor {
-    var pos: Double
-    var r, g, b: Double
+    var pos: Float
+    var r, g, b: Float
 }
 
 struct Gradient {
@@ -32,15 +32,15 @@ struct Gradient {
 }
 
 
-// Compare two double values for "enough" equality.
-func equalEnough(_ a: Double, _ b: Double) -> Bool {
+// Compare two float values for "enough" equality.
+func equalEnough(_ a: Float, _ b: Float) -> Bool {
     let absA = abs(a)
     let absB = abs(b)
 
-    return abs(absA - absB) <= max(absA, absB) * Double.ulpOfOne
+    return abs(absA - absB) <= max(absA, absB) * Float.ulpOfOne
 }
 
-func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Double) -> Int? {
+func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Float) -> Int? {
     for i in 0..<gradient.colors.count {
         if equalEnough(gradient.colors[i].pos, pos) {
             return i
@@ -66,10 +66,10 @@ func loadGradient(_ filename: String) -> Gradient? {
 
             if matches.count == 1 {
                 if matches[0].numberOfRanges == 4+1 {
-                    let pos = Double((line as NSString).substring(with: matches[0].range(at: 1)))
-                    let r = Double((line as NSString).substring(with: matches[0].range(at: 2)))
-                    let g = Double((line as NSString).substring(with: matches[0].range(at: 3)))
-                    let b = Double((line as NSString).substring(with: matches[0].range(at: 4)))
+                    let pos = Float((line as NSString).substring(with: matches[0].range(at: 1)))
+                    let r = Float((line as NSString).substring(with: matches[0].range(at: 2)))
+                    let g = Float((line as NSString).substring(with: matches[0].range(at: 3)))
+                    let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
 
                     if pos != nil && r != nil && g != nil && b != nil {
                         if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
@@ -92,7 +92,7 @@ func loadGradient(_ filename: String) -> Gradient? {
     return gradient
 }
 
-func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Double) -> (Double, Double, Double) {
+func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Float) -> (Float, Float, Float) {
     let pos2 = (pos - left.pos) / (right.pos - left.pos)
 
     return (((right.r - left.r) * pos2) + left.r,
@@ -100,7 +100,7 @@ func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos
             ((right.b - left.b) * pos2) + left.b)
 }
 
-func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double) -> (Double, Double, Double) {
+func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> (Float, Float, Float) {
     var left = 0
     let colors = gradient.colors
 
@@ -115,7 +115,7 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double) -> (Double
     return (0.0, 0.0, 0.0)
 }
 
-func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ histogram: inout [Int], _ iterationsPerPixel: inout [Int], _ smoothedDistancesToNextIterationPerPixel: inout [Double]) {
+func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ histogram: inout [Int], _ iterationsPerPixel: inout [Int], _ smoothedDistancesToNextIterationPerPixel: inout [Float]) {
     let width = height * (Double(imageWidth) / Double(imageHeight))
 
     let xLeft   = centerX - width / 2.0
@@ -164,7 +164,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
             let pixel = pixelY * imageWidth + pixelX
 
             if iter < maxIterations {
-                smoothedDistancesToNextIterationPerPixel[pixel] = 1.0 - min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)
+                smoothedDistancesToNextIterationPerPixel[pixel] = 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2))
                 histogram[iter] += 1  // no need to count histogram[max_iterations]
             }
 
@@ -173,7 +173,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
     }
 }
 
-func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [UInt8], _ histogram: [Int], _ iterationsPerPixel: [Int], _ smoothedDistancesToNextIterationPerPixel: [Double], _ normalizedColors: inout [Double]) {
+func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [UInt8], _ histogram: [Int], _ iterationsPerPixel: [Int], _ smoothedDistancesToNextIterationPerPixel: [Float], _ normalizedColors: inout [Float]) {
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
     var totalIterations = 0
@@ -188,7 +188,7 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
 
     for i in 1 ..< maxIterations {
         runningTotal += histogram[i]
-        normalizedColors[i] = Double(runningTotal) / Double(totalIterations)
+        normalizedColors[i] = Float(runningTotal) / Float(totalIterations)
     }
 
     for pixelY in 0 ..< imageHeight {
@@ -301,9 +301,9 @@ func evalArguments(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double
 func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ imageData: inout [UInt8], _ durations: inout [Double], _ repetitions: Int) {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     var histogram = [Int](repeating: 0, count: maxIterations + 1)
-    var normalizedColors = [Double](repeating: 0, count: maxIterations + 1)
+    var normalizedColors = [Float](repeating: 0, count: maxIterations + 1)
     var iterationsPerPixel = [Int](repeating: 0, count: imageWidth * imageHeight)
-    var smoothedDistancesToNextIterationPerPixel = [Double](repeating: 0, count: imageWidth * imageHeight)
+    var smoothedDistancesToNextIterationPerPixel = [Float](repeating: 0, count: imageWidth * imageHeight)
 
     for _ in 0 ..< repetitions {
         let t1 = Date()
