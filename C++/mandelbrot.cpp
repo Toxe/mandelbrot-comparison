@@ -107,17 +107,15 @@ void color_from_gradient_range(const GradientColor& left, const GradientColor& r
     pixel_color.b = static_cast<unsigned char>(255.0f * (((right.b - left.b) * pos2) + left.b));
 }
 
-void color_from_gradient(const Gradient& gradient, float pos, PixelColor& pixel_color)
+void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& pixel_color)
 {
-    for (std::size_t i = 1; i < gradient.colors.size(); ++i) {
-        const GradientColor& left = gradient.colors[i - 1];
-        const GradientColor& right = gradient.colors[i];
+    const auto end = gradient.colors.cend();
 
-        if (pos >= left.pos && pos <= right.pos) {
-            color_from_gradient_range(left, right, pos, pixel_color);
-            break;
-        }
-    }
+    const auto it = std::adjacent_find(gradient.colors.cbegin(), end,
+        [&](const GradientColor& left, const GradientColor& right) { return left.pos <= pos && pos <= right.pos; });
+
+    if (it != end)
+        color_from_gradient_range(*it, *(it+1), pos, pixel_color);
 }
 
 void mandelbrot_calc(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height,
