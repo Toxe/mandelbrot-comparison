@@ -38,8 +38,8 @@ struct PixelColor {
 };
 
 struct GradientColor {
-    double pos;
-    double r, g, b;
+    float pos;
+    float r, g, b;
 };
 
 struct Gradient {
@@ -53,10 +53,10 @@ void die(Error error)
     std::exit(static_cast<int>(error));
 }
 
-// Compare two double values for "enough" equality.
-bool equal_enough(double a, double b)
+// Compare two float values for "enough" equality.
+bool equal_enough(float a, float b)
 {
-    constexpr double epsilon = std::numeric_limits<double>::epsilon();
+    constexpr float epsilon = std::numeric_limits<float>::epsilon();
 
     a = std::abs(a);
     b = std::abs(b);
@@ -64,7 +64,7 @@ bool equal_enough(double a, double b)
     return std::abs(a - b) <= std::max(a, b) * epsilon;
 }
 
-GradientColor* gradient_get_color_at_position(Gradient& gradient, const double pos)
+GradientColor* gradient_get_color_at_position(Gradient& gradient, const float pos)
 {
     for (GradientColor& col : gradient.colors)
         if (equal_enough(col.pos, pos))
@@ -76,8 +76,8 @@ GradientColor* gradient_get_color_at_position(Gradient& gradient, const double p
 Gradient load_gradient(const std::string& filename)
 {
     Gradient gradient;
-    gradient.colors.push_back(GradientColor{0.0, 0.0, 0.0, 0.0});
-    gradient.colors.push_back(GradientColor{1.0, 1.0, 1.0, 1.0});
+    gradient.colors.push_back(GradientColor{0.0f, 0.0f, 0.0f, 0.0f});
+    gradient.colors.push_back(GradientColor{1.0f, 1.0f, 1.0f, 1.0f});
 
     std::ifstream in{filename};
     std::string line;
@@ -91,15 +91,15 @@ Gradient load_gradient(const std::string& filename)
     while (std::getline(in, line)) {
         if (std::regex_match(line, m, re)) {
             if (m.size() == 4+1) {
-                double pos = std::stod(m[1]);
+                float pos = std::stof(m[1]);
                 GradientColor* col;
 
                 if ((col = gradient_get_color_at_position(gradient, pos))) {
-                    col->r = std::stod(m[2]);
-                    col->g = std::stod(m[3]);
-                    col->b = std::stod(m[4]);
+                    col->r = std::stof(m[2]);
+                    col->g = std::stof(m[3]);
+                    col->b = std::stof(m[4]);
                 } else {
-                    GradientColor col{pos, std::stod(m[2]), std::stod(m[3]), std::stod(m[4])};
+                    GradientColor col{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
                     gradient.colors.push_back(col);
                 }
             }

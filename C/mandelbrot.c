@@ -31,8 +31,8 @@ typedef enum exitcode_t {
 
 typedef struct
 {
-    double pos;
-    double r, g, b;
+    float pos;
+    float r, g, b;
 } gradient_color_t;
 
 typedef struct
@@ -49,16 +49,16 @@ void die(exitcode_t error)
     exit(error);
 }
 
-// Compare two double values for "enough" equality.
-int equal_enough(double a, double b)
+// Compare two float values for "enough" equality.
+int equal_enough(float a, float b)
 {
-    a = fabs(a);
-    b = fabs(b);
+    a = fabsf(a);
+    b = fabsf(b);
 
-    return fabs(a - b) <= fmax(a, b) * DBL_EPSILON;
+    return fabsf(a - b) <= fmaxf(a, b) * FLT_EPSILON;
 }
 
-gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, double pos)
+gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, float pos)
 {
     for (int i = 0; i < gradient->num_colors; ++i)
         if (equal_enough(gradient->colors[i].pos, pos))
@@ -106,10 +106,10 @@ gradient_t *load_gradient(char *filename)
         return NULL;
 
     while (fgets(buf, sizeof(buf), fp)) {
-        double pos, r, g, b;
+        float pos, r, g, b;
         gradient_color_t *col;
 
-        if (sscanf(buf, "%lf: %lf, %lf, %lf", &pos, &r, &g, &b) != 4)
+        if (sscanf(buf, "%f: %f, %f, %f", &pos, &r, &g, &b) != 4)
             continue;
 
         if (!(col = gradient_get_color_at_position(gradient, pos))) {
