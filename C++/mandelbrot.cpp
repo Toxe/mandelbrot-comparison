@@ -33,26 +33,6 @@ enum class Error {
     GetTime
 };
 
-struct PixelColor {
-    unsigned char r, g, b;
-};
-
-struct GradientColor {
-    float pos;
-    float r, g, b;
-};
-
-struct Gradient {
-    std::vector<GradientColor> colors;
-};
-
-
-void die(Error error)
-{
-    std::cerr << "Error: " << static_cast<int>(error) << std::endl;
-    std::exit(static_cast<int>(error));
-}
-
 // Compare two float values for "enough" equality.
 bool equal_enough(float a, float b)
 {
@@ -64,13 +44,24 @@ bool equal_enough(float a, float b)
     return std::abs(a - b) <= std::max(a, b) * epsilon;
 }
 
-GradientColor* gradient_get_color_at_position(Gradient& gradient, const float pos)
-{
-    for (GradientColor& col : gradient.colors)
-        if (equal_enough(col.pos, pos))
-            return &col;
+struct PixelColor {
+    unsigned char r, g, b;
+};
 
-    return nullptr;
+struct GradientColor {
+    float pos;
+    float r, g, b;
+    bool operator==(const float p) const { return equal_enough(p, pos); }
+};
+
+struct Gradient {
+    std::vector<GradientColor> colors;
+};
+
+void die(Error error)
+{
+    std::cerr << "Error: " << static_cast<int>(error) << std::endl;
+    std::exit(static_cast<int>(error));
 }
 
 Gradient load_gradient(const std::string& filename)
@@ -92,8 +83,9 @@ Gradient load_gradient(const std::string& filename)
         if (std::regex_match(line, m, re)) {
             if (m.size() == 4+1) {
                 float pos = std::stof(m[1]);
+                auto col = std::find(gradient.colors.begin(), gradient.colors.end(), pos);
 
-                if (GradientColor* col = gradient_get_color_at_position(gradient, pos))
+                if (col != gradient.colors.end())
                     *col = GradientColor{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
                 else
                     gradient.colors.push_back({pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])});
