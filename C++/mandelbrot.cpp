@@ -92,16 +92,11 @@ Gradient load_gradient(const std::string& filename)
         if (std::regex_match(line, m, re)) {
             if (m.size() == 4+1) {
                 float pos = std::stof(m[1]);
-                GradientColor* col;
 
-                if ((col = gradient_get_color_at_position(gradient, pos))) {
-                    col->r = std::stof(m[2]);
-                    col->g = std::stof(m[3]);
-                    col->b = std::stof(m[4]);
-                } else {
-                    GradientColor col{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
-                    gradient.colors.push_back(col);
-                }
+                if (GradientColor* col = gradient_get_color_at_position(gradient, pos))
+                    *col = GradientColor{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
+                else
+                    gradient.colors.push_back({pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])});
             }
         }
     }
