@@ -21,6 +21,7 @@
 #include <limits>
 #include <numeric>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -262,38 +263,14 @@ void show_summary(const std::vector<double>& durations)
     }
 }
 
-int eval_int_arg(const char* s, int min, int max)
+template <typename T>
+T eval_arg(const char* s, T min, T max)
 {
-    int value;
+    T value;
+    std::istringstream in{s};
 
-    try {
-        value = std::stoi(s);
-
-        if (value < min || value > max)
-            die(Error::EvalArgs);
-
-        return value;
-    } catch (...) {
+    if (!(in >> value) || value < min || value > max)
         die(Error::EvalArgs);
-    }
-
-    return value;
-}
-
-double eval_double_arg(const char* s, double min, double max)
-{
-    double value;
-
-    try {
-        value = std::stod(s);
-
-        if (value < min || value > max || std::isnan(value) || std::isinf(value))
-            die(Error::EvalArgs);
-
-        return value;
-    } catch (...) {
-        die(Error::EvalArgs);
-    }
 
     return value;
 }
@@ -303,13 +280,13 @@ std::tuple<int, int, int, int, double, double, double, std::string, std::string>
     if (argc < 10)
         die(Error::EvalArgs);
 
-    auto image_width    = eval_int_arg(argv[1], 1, 100000);
-    auto image_height   = eval_int_arg(argv[2], 1, 100000);
-    auto max_iterations = eval_int_arg(argv[3], 1, 1000000000);
-    auto repetitions    = eval_int_arg(argv[4], 1, 1000000);
-    auto center_x       = eval_double_arg(argv[5], -100.0, 100.0);
-    auto center_y       = eval_double_arg(argv[6], -100.0, 100.0);
-    auto height         = eval_double_arg(argv[7], -100.0, 100.0);
+    auto image_width    = eval_arg(argv[1], 1, 100000);
+    auto image_height   = eval_arg(argv[2], 1, 100000);
+    auto max_iterations = eval_arg(argv[3], 1, 1000000000);
+    auto repetitions    = eval_arg(argv[4], 1, 1000000);
+    auto center_x       = eval_arg(argv[5], -100.0, 100.0);
+    auto center_y       = eval_arg(argv[6], -100.0, 100.0);
+    auto height         = eval_arg(argv[7], -100.0, 100.0);
     auto colors         = std::string{argv[8]};
     auto filename       = std::string{argv[9]};
 
