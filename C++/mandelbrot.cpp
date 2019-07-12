@@ -34,7 +34,7 @@ enum class Error {
 };
 
 // Compare two float values for "enough" equality.
-bool equal_enough(float a, float b)
+bool equal_enough(float a, float b) noexcept
 {
     constexpr float epsilon = std::numeric_limits<float>::epsilon();
 
@@ -51,8 +51,8 @@ struct PixelColor {
 struct GradientColor {
     float pos;
     float r, g, b;
-    bool operator==(const float p) const { return equal_enough(p, pos); }
-    bool operator<(const GradientColor& col) const { return pos < col.pos; }
+    bool operator==(const float p) const noexcept { return equal_enough(p, pos); }
+    bool operator<(const GradientColor& col) const noexcept { return pos < col.pos; }
 };
 
 struct Gradient {
@@ -98,7 +98,7 @@ Gradient load_gradient(const std::string& filename)
     return gradient;
 }
 
-void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const float pos, PixelColor& pixel_color)
+void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const float pos, PixelColor& pixel_color) noexcept
 {
     const float pos2 = (pos - left.pos) / (right.pos - left.pos);
 
@@ -107,7 +107,7 @@ void color_from_gradient_range(const GradientColor& left, const GradientColor& r
     pixel_color.b = static_cast<unsigned char>(255.0f * (((right.b - left.b) * pos2) + left.b));
 }
 
-void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& pixel_color)
+void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& pixel_color) noexcept
 {
     const auto end = gradient.colors.cend();
 
@@ -119,7 +119,7 @@ void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& 
 }
 
 void mandelbrot_calc(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height,
-                     std::vector<int>& histogram, std::vector<int>& iterations_per_pixel, std::vector<float>& smoothed_distances_to_next_iteration_per_pixel)
+                     std::vector<int>& histogram, std::vector<int>& iterations_per_pixel, std::vector<float>& smoothed_distances_to_next_iteration_per_pixel) noexcept
 {
     const double width = height * (static_cast<double>(image_width) / static_cast<double>(image_height));
 
@@ -177,7 +177,7 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
 }
 
 void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
-                         std::vector<PixelColor>& image_data, const std::vector<int>& histogram, const std::vector<int>& iterations_per_pixel, const std::vector<float>& smoothed_distances_to_next_iteration_per_pixel, std::vector<float>& normalized_colors)
+                         std::vector<PixelColor>& image_data, const std::vector<int>& histogram, const std::vector<int>& iterations_per_pixel, const std::vector<float>& smoothed_distances_to_next_iteration_per_pixel, std::vector<float>& normalized_colors) noexcept
 {
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
@@ -316,7 +316,7 @@ std::tuple<int, int, int, int, double, double, double, std::string, std::string>
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename);
 }
 
-void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, std::vector<PixelColor>& image_data, std::vector<double>& durations, const int repetitions)
+void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, std::vector<PixelColor>& image_data, std::vector<double>& durations, const int repetitions) noexcept
 {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<int> histogram(static_cast<std::size_t>(max_iterations + 1));
