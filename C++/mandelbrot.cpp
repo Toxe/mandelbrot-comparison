@@ -52,6 +52,7 @@ struct GradientColor {
     float pos;
     float r, g, b;
     bool operator==(const float p) const { return equal_enough(p, pos); }
+    bool operator<(const GradientColor& col) const { return pos < col.pos; }
 };
 
 struct Gradient {
@@ -93,7 +94,7 @@ Gradient load_gradient(const std::string& filename)
         }
     }
 
-    std::sort(gradient.colors.begin(), gradient.colors.end(), [](const auto& col1, const auto& col2) { return col1.pos < col2.pos; });
+    std::sort(gradient.colors.begin(), gradient.colors.end());
     return gradient;
 }
 
