@@ -129,9 +129,10 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
         histogram[i] = 0
 
     for pixel_y in xrange(image_height):
+        y0 = y_top - height * (float(pixel_y) / float(image_height))
+
         for pixel_x in xrange(image_width):
             x0 = x_left + width * (float(pixel_x) / float(image_width))
-            y0 = y_top - height * (float(pixel_y) / float(image_height))
 
             x = 0.0
             y = 0.0

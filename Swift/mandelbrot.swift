@@ -135,9 +135,10 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
     }
 
     for pixelY in 0 ..< imageHeight {
+        let y0 = yTop - height * (Double(pixelY) / Double(imageHeight))
+
         for pixelX in 0 ..< imageWidth {
             let x0 = xLeft + width * (Double(pixelX) / Double(imageWidth))
-            let y0 = yTop - height * (Double(pixelY) / Double(imageHeight))
 
             var x = 0.0
             var y = 0.0

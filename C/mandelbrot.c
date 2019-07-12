@@ -185,9 +185,10 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
     memset(histogram, 0, (max_iterations + 1) * sizeof(int));
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
+        const double y0 = y_top - height * ((double) pixel_y / (double) image_height);
+
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
             const double x0 = x_left + width * ((double) pixel_x / (double) image_width);
-            const double y0 = y_top - height * ((double) pixel_y / (double) image_height);
 
             double x = 0.0;
             double y = 0.0;

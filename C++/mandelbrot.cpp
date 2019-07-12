@@ -138,9 +138,10 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
     std::fill(histogram.begin(), histogram.end(), 0);
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
+        const double y0 = y_top - height * (static_cast<double>(pixel_y) / static_cast<double>(image_height));
+
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
             const double x0 = x_left + width * (static_cast<double>(pixel_x) / static_cast<double>(image_width));
-            const double y0 = y_top - height * (static_cast<double>(pixel_y) / static_cast<double>(image_height));
 
             double x = 0.0;
             double y = 0.0;
