@@ -136,16 +136,16 @@ void free_gradient(gradient_t *gradient)
     free(gradient);
 }
 
-void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, double pos, double *r, double *g, double *b)
+void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, float pos, float *r, float *g, float *b)
 {
-    double pos2 = (pos - left->pos) / (right->pos - left->pos);
+    float pos2 = (pos - left->pos) / (right->pos - left->pos);
 
     *r = ((right->r - left->r) * pos2) + left->r;
     *g = ((right->g - left->g) * pos2) + left->g;
     *b = ((right->b - left->b) * pos2) + left->b;
 }
 
-int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, double *b)
+int color_from_gradient(gradient_t *gradient, float pos, float *r, float *g, float *b)
 {
     gradient_color_t *left, *right;
 
@@ -166,7 +166,7 @@ int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, 
 }
 
 void mandelbrot_calc(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height,
-                     int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel)
+                     int *histogram, int *iterations_per_pixel, float *smoothed_distances_to_next_iteration_per_pixel)
 {
     const double width = height * ((double) image_width / (double) image_height);
 
@@ -225,7 +225,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
 }
 
 void mandelbrot_colorize(int image_width, int image_height, int max_iterations, gradient_t *gradient,
-                         unsigned char *image_data, int *histogram, int *iterations_per_pixel, double *smoothed_distances_to_next_iteration_per_pixel, double *normalized_colors)
+                         unsigned char *image_data, int *histogram, int *iterations_per_pixel, float *smoothed_distances_to_next_iteration_per_pixel, float *normalized_colors)
 {
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
@@ -255,18 +255,18 @@ void mandelbrot_colorize(int image_width, int image_height, int max_iterations, 
                 image_data[3 * pixel + 2] = 0;
             } else {
                 // we use the color of the previous iteration in order to cover the full gradient range
-                double r, g, b;
-                double color_of_previous_iter = normalized_colors[iter - 1];
-                double color_of_current_iter  = normalized_colors[iter];
+                float r, g, b;
+                float color_of_previous_iter = normalized_colors[iter - 1];
+                float color_of_current_iter  = normalized_colors[iter];
 
-                double smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel];  // 0 .. <1.0
-                double pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
+                float smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel];  // 0 .. <1.0
+                float pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter);
 
                 color_from_gradient(gradient, pos_in_gradient, &r, &g, &b);
 
-                image_data[3 * pixel + 0] = (unsigned char) (255.0 * r);
-                image_data[3 * pixel + 1] = (unsigned char) (255.0 * g);
-                image_data[3 * pixel + 2] = (unsigned char) (255.0 * b);
+                image_data[3 * pixel + 0] = (unsigned char) (255.0f * r);
+                image_data[3 * pixel + 1] = (unsigned char) (255.0f * g);
+                image_data[3 * pixel + 2] = (unsigned char) (255.0f * b);
             }
         }
     }
@@ -439,20 +439,20 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
 {
     int *histogram;
     int *iterations_per_pixel;
-    double *smoothed_distances_to_next_iteration_per_pixel;
-    double *normalized_colors;
+    float *smoothed_distances_to_next_iteration_per_pixel;
+    float *normalized_colors;
 
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     if (!(histogram = malloc((max_iterations + 1) * sizeof(int))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(normalized_colors = malloc((max_iterations + 1) * sizeof(double))))
+    if (!(normalized_colors = malloc((max_iterations + 1) * sizeof(float))))
         die(ERROR_ALLOC_MEMORY);
 
     if (!(iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(smoothed_distances_to_next_iteration_per_pixel = malloc(image_width * image_height * sizeof(double))))
+    if (!(smoothed_distances_to_next_iteration_per_pixel = malloc(image_width * image_height * sizeof(float))))
         die(ERROR_ALLOC_MEMORY);
 
     for (int i = 0; i < repetitions; ++i) {
