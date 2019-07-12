@@ -103,11 +103,6 @@ def color_from_gradient_range(left_color, right_color, pos):
 
 
 def color_from_gradient(gradient, pos):
-    if pos < 0.0:
-        pos = 0.0
-    if pos > 1.0:
-        pos = 1.0
-
     left_color = gradient.colors[0]
 
     for right_color in gradient.colors[1:]:

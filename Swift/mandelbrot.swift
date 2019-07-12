@@ -101,22 +101,12 @@ func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos
 }
 
 func colorFromGradient(_ gradient: Gradient, _ posInGradient: Double) -> (Double, Double, Double) {
-    var pos = posInGradient
-
-    if (pos < 0.0) {
-        pos = 0.0
-    }
-
-    if (pos > 1.0) {
-        pos = 1.0
-    }
-
     var left = 0
     let colors = gradient.colors
 
     for right in 1 ..< colors.count {
-        if pos >= colors[left].pos && pos <= colors[right].pos {
-            return colorFromGradientRange(colors[left], colors[right], pos)
+        if posInGradient >= colors[left].pos && posInGradient <= colors[right].pos {
+            return colorFromGradientRange(colors[left], colors[right], posInGradient)
         }
 
         left = right

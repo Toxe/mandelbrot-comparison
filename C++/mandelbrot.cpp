@@ -109,12 +109,6 @@ void color_from_gradient_range(const GradientColor& left, const GradientColor& r
 
 void color_from_gradient(const Gradient& gradient, double pos, PixelColor& pixel_color)
 {
-    if (pos < 0.0)
-        pos = 0.0;
-
-    if (pos > 1.0)
-        pos = 1.0;
-
     for (std::size_t i = 1; i < gradient.colors.size(); ++i) {
         const GradientColor& left = gradient.colors[i - 1];
         const GradientColor& right = gradient.colors[i];

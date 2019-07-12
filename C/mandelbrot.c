@@ -147,12 +147,6 @@ void color_from_gradient_range(gradient_color_t *left, gradient_color_t *right, 
 
 int color_from_gradient(gradient_t *gradient, double pos, double *r, double *g, double *b)
 {
-    if (pos < 0.0)
-        pos = 0.0;
-
-    if (pos > 1.0)
-        pos = 1.0;
-
     gradient_color_t *left, *right;
 
     left = &gradient->colors[0];
