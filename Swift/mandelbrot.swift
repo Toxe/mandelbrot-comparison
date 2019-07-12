@@ -155,9 +155,8 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
                     break
                 }
 
-                let xtemp = xSquared - ySquared + x0
                 y = 2.0*x*y + y0
-                x = xtemp
+                x = xSquared - ySquared + x0
 
                 iter += 1
             }

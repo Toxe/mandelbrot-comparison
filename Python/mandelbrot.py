@@ -147,9 +147,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
                 if x_squared + y_squared >= bailout_squared:
                     break
 
-                xtemp = x_squared - y_squared + x0
                 y = 2.0*x*y + y0
-                x = xtemp
+                x = x_squared - y_squared + x0
                 iter += 1
 
             if iter < max_iterations:
