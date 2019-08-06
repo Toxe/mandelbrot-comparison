@@ -19,7 +19,13 @@
 #include <float.h>
 #include <errno.h>
 #include <limits.h>
+
+#ifdef _WIN32
+#include <time.h>
+#include <Windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 typedef enum exitcode_t {
     ERROR_ALLOC_MEMORY = 1,
@@ -390,12 +396,24 @@ void show_summary(const double *durations, int repetitions)
 
 double gettime()
 {
+#ifdef _WIN32
+    LARGE_INTEGER t, freq;
+
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&t);
+
+    t.QuadPart *= 1000000;
+    t.QuadPart /= freq.QuadPart;
+
+    return t.QuadPart / 1000000.0;
+#else
     struct timeval tv;
 
     if (gettimeofday(&tv, NULL) != 0)
         die(ERROR_GETTIME);
 
     return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+#endif
 }
 
 int eval_int_arg(const char *s, int min, int max)
