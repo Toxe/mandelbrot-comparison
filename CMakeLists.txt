@@ -5,4 +5,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(C)
 add_subdirectory(C++)
-add_subdirectory(Swift)
+
+if(CMAKE_HOST_APPLE)
+    add_subdirectory(Swift)
+endif()
