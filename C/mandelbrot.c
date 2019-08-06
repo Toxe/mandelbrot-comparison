@@ -99,12 +99,12 @@ gradient_t *load_gradient(char *filename)
     gradient_t *gradient;
     char buf[256];
 
-    if (!(gradient = malloc(sizeof(gradient_t))))
+    if (!(gradient = (gradient_t *) malloc(sizeof(gradient_t))))
         die(ERROR_ALLOC_MEMORY);
 
     gradient->num_colors = 2;
 
-    if (!(gradient->colors = malloc(gradient->num_colors * sizeof(gradient_color_t))))
+    if (!(gradient->colors = (gradient_color_t *) malloc(gradient->num_colors * sizeof(gradient_color_t))))
         die(ERROR_ALLOC_MEMORY);
 
     gradient->colors[0].pos = 0.0;
@@ -129,7 +129,7 @@ gradient_t *load_gradient(char *filename)
 
         if (!(col = gradient_get_color_at_position(gradient, pos))) {
             gradient->num_colors++;
-            gradient->colors = realloc(gradient->colors, gradient->num_colors * sizeof(gradient_color_t));
+            gradient->colors = (gradient_color_t *) realloc(gradient->colors, gradient->num_colors * sizeof(gradient_color_t));
             col = &gradient->colors[gradient->num_colors - 1];
         }
 
@@ -229,7 +229,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
             const int pixel = pixel_y * image_width + pixel_x;
 
             if (iter < max_iterations) {
-                smoothed_distances_to_next_iteration_per_pixel[pixel] = 1.0 - fmin(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2);
+                smoothed_distances_to_next_iteration_per_pixel[pixel] = 1.0f - fminf(1.0f, (float) ((log(log(final_magnitude)) - log_log_bailout) / log_2));
                 ++histogram[iter];  // no need to count histogram[max_iterations]
             }
 
@@ -254,7 +254,7 @@ void mandelbrot_colorize(int image_width, int image_height, int max_iterations, 
 
     for (int i = 1; i < max_iterations; ++i) {
         running_total += histogram[i];
-        normalized_colors[i] = (double) running_total / (double) total_iterations;
+        normalized_colors[i] = running_total / (float) total_iterations;
     }
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
@@ -324,7 +324,7 @@ double median(const double *values, int num_values)
 {
     double *sorted_values;
 
-    if (!(sorted_values = malloc(num_values * sizeof(double))))
+    if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
     memcpy(sorted_values, values, num_values * sizeof(double));
@@ -350,13 +350,13 @@ char *durations2string(const double *values, int num_values)
     int tmp_len;
     int pos;
 
-    if (!(sorted_values = malloc(num_values * sizeof(double))))
+    if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
 
-    if (!(buf = malloc(buf_len * sizeof(char))))
+    if (!(buf = (char *) malloc(buf_len * sizeof(char))))
         die(ERROR_ALLOC_MEMORY);
 
     sprintf(buf, "[");
@@ -369,7 +369,7 @@ char *durations2string(const double *values, int num_values)
         if ((pos + tmp_len + 1) > buf_len) {
             buf_len += 256;
 
-            if (!(buf = realloc(buf, buf_len)))
+            if (!(buf = (char *) realloc(buf, buf_len)))
                 die(ERROR_ALLOC_MEMORY);
         }
 
@@ -469,16 +469,16 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
     float *normalized_colors;
 
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    if (!(histogram = malloc((max_iterations + 1) * sizeof(int))))
+    if (!(histogram = (int *) malloc((max_iterations + 1) * sizeof(int))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(normalized_colors = malloc((max_iterations + 1) * sizeof(float))))
+    if (!(normalized_colors = (float *) malloc((max_iterations + 1) * sizeof(float))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(iterations_per_pixel = malloc(image_width * image_height * sizeof(int))))
+    if (!(iterations_per_pixel = (int *) malloc(image_width * image_height * sizeof(int))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(smoothed_distances_to_next_iteration_per_pixel = malloc(image_width * image_height * sizeof(float))))
+    if (!(smoothed_distances_to_next_iteration_per_pixel = (float *) malloc(image_width * image_height * sizeof(float))))
         die(ERROR_ALLOC_MEMORY);
 
     for (int i = 0; i < repetitions; ++i) {
@@ -514,10 +514,10 @@ int main(int argc, char **argv)
     if (!(gradient = load_gradient(gradient_filename)))
         die(ERROR_LOAD_GRADIENT);
 
-    if (!(image_data = malloc(image_width * image_height * 3 * sizeof(unsigned char))))
+    if (!(image_data = (unsigned char *) malloc(image_width * image_height * 3 * sizeof(unsigned char))))
         die(ERROR_ALLOC_MEMORY);
 
-    if (!(durations = malloc(repetitions * sizeof(double))))
+    if (!(durations = (double *) malloc(repetitions * sizeof(double))))
         die(ERROR_ALLOC_MEMORY);
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
