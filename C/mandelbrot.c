@@ -50,7 +50,7 @@ void die(exitcode_t error)
 }
 
 // Compare two float values for "enough" equality.
-int equal_enough(float a, float b)
+int equal_enough_float(float a, float b)
 {
     a = fabsf(a);
     b = fabsf(b);
@@ -58,10 +58,19 @@ int equal_enough(float a, float b)
     return fabsf(a - b) <= fmaxf(a, b) * FLT_EPSILON;
 }
 
+// Compare two double values for "enough" equality.
+int equal_enough_double(double a, double b)
+{
+    a = fabs(a);
+    b = fabs(b);
+
+    return fabs(a - b) <= fmax(a, b) * DBL_EPSILON;
+}
+
 gradient_color_t *gradient_get_color_at_position(gradient_t *gradient, float pos)
 {
     for (int i = 0; i < gradient->num_colors; ++i)
-        if (equal_enough(gradient->colors[i].pos, pos))
+        if (equal_enough_float(gradient->colors[i].pos, pos))
             return &gradient->colors[i];
 
     return NULL;
@@ -72,7 +81,7 @@ int cmp_color_pos_func(const void *p1, const void *p2)
     const gradient_color_t *a = (const gradient_color_t *) p1;
     const gradient_color_t *b = (const gradient_color_t *) p2;
 
-    if (equal_enough(a->pos, b->pos))
+    if (equal_enough_float(a->pos, b->pos))
         return 0;
 
     return (a->pos < b->pos) ? -1 : 1;
@@ -289,7 +298,7 @@ int cmp_doubles_func(const void *p1, const void *p2)
     double a = *((const double *) p1);
     double b = *((const double *) p2);
 
-    if (equal_enough(a, b))
+    if (equal_enough_double(a, b))
         return 0;
 
     return (a < b) ? -1 : 1;
