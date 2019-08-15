@@ -290,7 +290,7 @@ int save_image(const char *filename, const unsigned char *image_data, int width,
 {
     FILE *fp;
 
-    if (!(fp = fopen(filename, "w")))
+    if (!(fp = fopen(filename, "wb")))
         return -1;
 
     fwrite(image_data, sizeof(unsigned char), 3 * width * height, fp);

@@ -219,7 +219,7 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
 
 bool save_image(const std::string& filename, const std::vector<PixelColor>& image_data)
 {
-    std::ofstream out{filename};
+    std::ofstream out{filename, std::ofstream::binary};
 
     if (!out.is_open())
         return false;
