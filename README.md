@@ -5,13 +5,14 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 
 ## Status
 
-| Language | Status |
-| -------- | ------ |
-| C        | Done.  |
-| C++      | Done.  |
-| Python   | Done.  |
-| Swift    | Done.  |
-| PHP      | Maybe? |
+| Language   | Status |
+| ---------- | ------ |
+| C          | Done.  |
+| C++        | Done.  |
+| Python     | Done.  |
+| Swift      | Done.  |
+| PHP        | Maybe? |
+| JavaScript | Maybe? |
 
 ## Some background
 
