@@ -6,7 +6,7 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 | Language | Status |
 | -------- | ------ |
 | C        | Done.  |
-| C++      | WIP    |
+| C++      | Done.  |
 | Python   | Done.  |
 | Swift    | Done.  |
 | PHP      | Maybe? |
@@ -27,7 +27,23 @@ I want to compare the shape, size and performance of a simple yet computationall
 
 ## Building
 
-In general simply run `make` or `make release` (or `make debug` for a debug build) from the top directory or the C or Swift subdirectories.
+### Build on Linux or macOS with Ninja
+
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+ninja
+```
+
+### Build on Windows
+
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+```
 
 ## Running
 
@@ -48,15 +64,22 @@ $ mandelbrot <image_width> <image_height> <iterations> <repetitions (1+)> <cente
 
 ### C
 ```
-$ ./C/mandelbrot 800 600 1000 10 -0.8 0.0 2.2 grey.gradient mandelbrot.raw
+$ ./C/mandelbrot 800 600 1000 10 -0.8 0.0 2.2 gradients/grey.gradient mandelbrot.raw
 ```
+
+### C++
+```
+$ ./C++/mandelbrot_cpp 800 600 1000 10 -0.8 0.0 2.2 gradients/grey.gradient mandelbrot.raw
+```
+
 ### Swift
 ```
-$ ./Swift/mandelbrot 800 600 1000 10 -0.8 0.0 2.2 grey.gradient mandelbrot.raw
+$ ./Swift/mandelbrot 800 600 1000 10 -0.8 0.0 2.2 gradients/grey.gradient mandelbrot.raw
 ```
+
 ### Python
 ```
-$ python ./Python/mandelbrot.py 800 600 1000 10 -0.8 0.0 2.2 grey.gradient mandelbrot.raw
+$ python ./Python/mandelbrot.py 800 600 1000 10 -0.8 0.0 2.2 gradients/grey.gradient mandelbrot.raw
 ```
 
 ## Output
@@ -65,15 +88,17 @@ Once the image data has been generated it will be saved under the name of the ou
 
 Also it will print out how long it took to calculate and colorize the image.
 
-### Converting the raw image with ImageMagick
+### Converting the raw image
 
 To convert the raw image into a more portable format simply use ImageMagick (or some other program that can read raw RGB data).
+
+#### ImageMagick
 
 ```
 $ convert -size 800x600 -depth 8 rgb:mandelbrot.raw mandelbrot.png
 ```
 
-Please note that the `-size` parameter needs to match the *width* and *height* arguments above.
+The `-size` parameter needs to match the *width* and *height* arguments above.
 
 It's easiest to simply combine both calls into one command line:
 
@@ -81,17 +106,33 @@ It's easiest to simply combine both calls into one command line:
 $ ./mandelbrot 800 600 1000 1 -0.8 0.0 2.2 grey.gradient mandelbrot.raw && convert -size 800x600 -depth 8 rgb:mandelbrot.raw mandelbrot.png
 ```
 
+#### IrfanView
+
+Open a raw 800x600 image with these parameters:
+
+- Image width: 800
+- Image height: 600
+- 24 BPP
+
 ### Benchmark mode
 
-If the *repetitions* command line argument is bigger than one the program will enter benchmark mode. This simply means that it will repeat calculating and colorizing the image as much times as specified in *repetitions*. At the end it will print out the mean and median times and a sorted list of all measurements.
+If the *repetitions* command line argument is greater than 1 the program will enter benchmark mode. This simply means that it will repeat calculating and colorizing the image as much times as specified in *repetitions*. At the end it will print out the mean and median times and a sorted list of all measurements.
+
+Example, repeat the calculations 10 times:
 
 ```
-mean: 0.897925 s, median: 0.897584 s (repetitions=10) [0.893949, 0.895080, 0.896350, 0.896801, 0.896827, 0.898341, 0.898766, 0.899246, 0.899974, 0.903912]
+./build/C++/mandelbrot_cpp 1600 1200 1000 10 -0.8 0.0 2.2 gradients/blue.gradient out.raw
+```
+
+```
+mean: 1.19767 s, median: 1.19711 s (repetitions=10) [1.19593, 1.1962, 1.19637, 1.19663, 1.19703, 1.19719, 1.19744, 1.19846, 1.20024, 1.20122]
 ```
 
 ## Gradient files
 
 Files used to colorize the image. Every point in the image gets mapped to a value from 0.0 to 1.0 depending on the number of iterations it took to bail out of the Mandelbrot calculation loop. This value defines a position in a color gradient.
+
+Some default and example gradient files are stored in the `./gradients` directory.
 
 Example: `blue.gradient`
 ```
@@ -102,6 +143,6 @@ Example: `blue.gradient`
 
 This defines a gradient that starts black (at position 0.0), is 100% blue in the middle (0.5) and turns into white at the end (1.0). The color at position 0.25 would be `R=0, G=0, B=0.5` and the color at 0.75 would be `R=0.5, G=0.5, B=1.0`.
 
-The default colors at position 0.0 and 1.0 are black and white.
+The default colors at position 0.0 and 1.0 are black and white, if not specified otherwise.
 
 Points that are inside the Mandelbrot Set are always black.
