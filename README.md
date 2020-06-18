@@ -146,3 +146,29 @@ This defines a gradient that starts black (at position 0.0), is 100% blue in the
 The default colors at position 0.0 and 1.0 are black and white, if not specified otherwise.
 
 Points that are inside the Mandelbrot Set are always black.
+
+## Examples
+
+```
+./build/C++/mandelbrot_cpp 800 600 1000 1 -0.8 0.0 2.2 gradients\benchmark.gradient example1.raw
+```
+
+![Example 1](images/example1.png)
+
+```
+./build/C++/mandelbrot_cpp 800 600 1000 1 0.282 -0.01 0.00512 gradients\orange.gradient example2.raw
+```
+
+![Example 2](images/example2.png)
+
+```
+./build/C++/mandelbrot_cpp 800 600 1000 1 -0.6906988741504118 0.4652112500501954 0.00000325 gradients\blue.gradient example3.raw
+```
+
+![Example 3](images/example3.png)
+
+```
+./build/C++/mandelbrot_cpp 800 600 1000 1 -0.743643887037151 0.131825904205330 0.0051299 gradients\benchmark.gradient example4.raw
+```
+
+![Example 4](images/example4.png)

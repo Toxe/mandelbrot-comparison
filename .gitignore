@@ -1,5 +1,4 @@
 *.raw
-*.png
 build*
 .vscode
 .vs
