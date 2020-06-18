@@ -1,3 +1,5 @@
+![Mandelbrot Comparison](images/title.png)
+
 # Mandelbrot Comparison
 A comparison of Mandelbrot Set programs in different languages with histogram based smooth coloring and a built-in benchmark mode.
 
