@@ -38,13 +38,8 @@ class GradientColor:
         self.r = r
         self.g = g
         self.b = b
-    def __cmp__(self, other):
-        if equal_enough(self.pos, other.pos):
-            return 0
-        elif self.pos < other.pos:
-            return -1
-        else:
-            return 1
+    def __lt__(self, other):
+        return self.pos < other.pos
 
 
 class Gradient:
