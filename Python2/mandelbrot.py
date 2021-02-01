@@ -1,9 +1,9 @@
 # coding=utf8
 
-# Python Mandelbrot.
+# Python2 Mandelbrot.
 #
-# Usage: python mandelbrot.py <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
-# Example: python mandelbrot.py 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
+# Usage: python2.7 mandelbrot.py <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+# Example: python2.7 mandelbrot.py 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
 #
 # Gradient file example:
 #   0.0: 0.0, 0.0, 0.0
