@@ -213,9 +213,9 @@ def median(values):
     values = sorted(values)
     count = len(values)
     if count % 2 == 1:
-        return values[(count-1) / 2]
+        return values[int((count-1) / 2)]
     else:
-        return (values[count/2 - 1] + values[count/2]) / 2.0
+        return (values[int(count/2 - 1)] + values[int(count/2)]) / 2.0
 
 
 def show_summary(durations):
