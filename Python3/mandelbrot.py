@@ -85,7 +85,6 @@ def load_gradient(filename):
         return gradient
     except IOError as e:
         return None
-    return None
 
 
 def color_from_gradient_range(left_color, right_color, pos):
