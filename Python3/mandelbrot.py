@@ -278,7 +278,7 @@ def go(image_width, image_height, max_iterations, center_x, center_y, height, gr
         durations.append(t2 - t1)
 
 
-if __name__ == '__main__':
+def main():
     image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
 
@@ -293,3 +293,7 @@ if __name__ == '__main__':
     if not save_image(filename, image_data):
         die(ExitCode.SAVE_IMAGE)
     show_summary(durations)
+
+
+if __name__ == '__main__':
+    main()
