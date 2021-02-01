@@ -130,6 +130,9 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             x = 0.0
             y = 0.0
 
+            x_squared = 0.0
+            y_squared = 0.0
+
             # iteration, will be from 1 to max_iterations once the loop is done
             iter = 0
 
