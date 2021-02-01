@@ -1,15 +1,18 @@
+![Mandelbrot Comparison](images/title.png)
+
 # Mandelbrot Comparison
 A comparison of Mandelbrot Set programs in different languages with histogram based smooth coloring and a built-in benchmark mode.
 
 ## Status
 
-| Language | Status |
-| -------- | ------ |
-| C        | Done.  |
-| C++      | Done.  |
-| Python   | Done.  |
-| Swift    | Done.  |
-| PHP      | Maybe? |
+| Language   | Status |
+| ---------- | ------ |
+| C          | Done.  |
+| C++        | Done.  |
+| Python     | Done.  |
+| Swift      | Done.  |
+| PHP        | Maybe? |
+| JavaScript | Maybe? |
 
 ## Some background
 
