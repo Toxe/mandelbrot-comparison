@@ -142,7 +142,7 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             # iteration, will be from 1 to max_iterations once the loop is done
             iter = 0
 
-            while iter < max_iterations:
+            for iter in xrange(max_iterations + 1):
                 x_squared = x*x
                 y_squared = y*y
 
@@ -151,7 +151,6 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
                 y = 2.0*x*y + y0
                 x = x_squared - y_squared + x0
-                iter += 1
 
             if iter < max_iterations:
                 final_magnitude = sqrt(x_squared + y_squared)
