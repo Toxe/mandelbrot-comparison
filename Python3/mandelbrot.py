@@ -24,14 +24,6 @@ from math import log, sqrt
 REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
 
 
-class ExitCode:
-    ALLOC_MEMORY = 1
-    EVAL_ARGS = 2
-    LOAD_GRADIENT = 3
-    SAVE_IMAGE = 4
-    GETTIME = 5
-
-
 class GradientColor:
     def __init__(self, pos, r, g, b):
         self.pos = pos
@@ -61,27 +53,24 @@ def gradient_get_color_at_position(gradient, pos):
 
 
 def load_gradient(filename):
-    try:
-        gradient = Gradient()
-        gradient.colors.append(GradientColor(0.0, 0.0, 0.0, 0.0))
-        gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
+    gradient = Gradient()
+    gradient.colors.append(GradientColor(0.0, 0.0, 0.0, 0.0))
+    gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
 
-        with open(filename, "r") as f:
-            for line in f:
-                match = REGEXP_GRADIENT_LINE.match(line)
-                if match:
-                    data = match.groups()
-                    col = gradient_get_color_at_position(gradient, float(data[0]))
-                    if col:
-                        col.r = float(data[1])
-                        col.g = float(data[2])
-                        col.b = float(data[3])
-                    else:
-                        gradient.colors.append(GradientColor(float(data[0]), float(data[1]), float(data[2]), float(data[3])))
-        gradient.colors.sort()
-        return gradient
-    except IOError:
-        return None
+    with open(filename, "r") as f:
+        for line in f:
+            match = REGEXP_GRADIENT_LINE.match(line)
+            if match:
+                data = match.groups()
+                col = gradient_get_color_at_position(gradient, float(data[0]))
+                if col:
+                    col.r = float(data[1])
+                    col.g = float(data[2])
+                    col.b = float(data[3])
+                else:
+                    gradient.colors.append(GradientColor(float(data[0]), float(data[1]), float(data[2]), float(data[3])))
+    gradient.colors.sort()
+    return gradient
 
 
 def color_from_gradient_range(left_color, right_color, pos):
@@ -184,12 +173,8 @@ def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, ima
 
 
 def save_image(filename, image_data):
-    try:
-        with open(filename, "wb") as f:
-            f.write(image_data)
-    except IOError:
-        return False
-    return True
+    with open(filename, "wb") as f:
+        f.write(image_data)
 
 
 def mean(values):
@@ -212,34 +197,23 @@ def show_summary(durations):
         print("mean: %f s, median: %f s (repetitions=%d) %s" % (mean(durations), median(durations), len(durations), str(sorted(durations))))
 
 
-def die(error):
-    print("Error: %d" % error, file=sys.stderr)
-    sys.exit(error)
-
-
 def eval_int_arg(s, min, max):
-    try:
-        value = int(s)
-        if value < min or value > max:
-            die(ExitCode.EVAL_ARGS)
-        return value
-    except ValueError:
-        die(ExitCode.EVAL_ARGS)
+    value = int(s)
+    if value < min or value > max:
+        raise ValueError(f"invalid value {s}")
+    return value
 
 
 def eval_float_arg(s, min, max):
-    try:
-        value = float(s)
-        if value < min or value > max or math.isnan(value) or math.isinf(value):
-            die(ExitCode.EVAL_ARGS)
-        return value
-    except ValueError:
-        die(ExitCode.EVAL_ARGS)
+    value = float(s)
+    if value < min or value > max or math.isnan(value) or math.isinf(value):
+        raise ValueError(f"invalid value {s}")
+    return value
 
 
 def eval_args():
     if len(sys.argv) < 10:
-        die(ExitCode.EVAL_ARGS)
+        raise RuntimeError("invalid number of arguments")
 
     image_width    = eval_int_arg(sys.argv[1], 1, 100000)
     image_height   = eval_int_arg(sys.argv[2], 1, 100000)
@@ -272,17 +246,12 @@ def go(image_width, image_height, max_iterations, center_x, center_y, height, gr
 def main():
     image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
-
-    if gradient == None:
-        die(ExitCode.LOAD_GRADIENT)
-
     image_data = bytearray([0] * (image_width * image_height * 3))
     durations = []
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
 
-    if not save_image(filename, image_data):
-        die(ExitCode.SAVE_IMAGE)
+    save_image(filename, image_data)
     show_summary(durations)
 
 
