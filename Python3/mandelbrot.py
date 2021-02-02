@@ -16,6 +16,7 @@
 import re
 import sys
 import math
+import statistics
 
 from time import time
 from math import log, sqrt
@@ -177,24 +178,11 @@ def save_image(filename, image_data):
         f.write(image_data)
 
 
-def mean(values):
-    return math.fsum(values) / len(values)
-
-
-def median(values):
-    values = sorted(values)
-    count = len(values)
-    if count % 2 == 1:
-        return values[int((count-1) / 2)]
-    else:
-        return (values[int(count/2 - 1)] + values[int(count/2)]) / 2.0
-
-
 def show_summary(durations):
     if len(durations) == 1:
         print("%f s" % durations[0])
     else:
-        print("mean: %f s, median: %f s (repetitions=%d) %s" % (mean(durations), median(durations), len(durations), str(sorted(durations))))
+        print("mean: %f s, median: %f s (repetitions=%d) %s" % (statistics.mean(durations), statistics.median(durations), len(durations), str(sorted(durations))))
 
 
 def eval_int_arg(s, min, max):
