@@ -57,10 +57,7 @@ def equal_enough(a, b):
 
 
 def gradient_get_color_at_position(gradient, pos):
-    for col in gradient.colors:
-        if equal_enough(col.pos, pos):
-            return col
-    return None
+    return next(filter(lambda col: equal_enough(col.pos, pos), gradient.colors), None)
 
 
 def load_gradient(filename):
@@ -96,13 +93,9 @@ def color_from_gradient_range(left_color, right_color, pos):
 
 
 def color_from_gradient(gradient, pos):
-    left_color = gradient.colors[0]
-
-    for right_color in gradient.colors[1:]:
-        if pos >= left_color.pos and pos <= right_color.pos:
-            return color_from_gradient_range(left_color, right_color, pos)
-        left_color = right_color
-
+    for colors in zip(gradient.colors[:-1], gradient.colors[1:]):
+        if pos >= colors[0].pos and pos <= colors[1].pos:
+            return color_from_gradient_range(colors[0], colors[1], pos)
     return None
 
 
@@ -118,8 +111,7 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     log_log_bailout = log(log(bailout))
     log_2 = log(2.0)
 
-    for i in range(max_iterations + 1):
-        histogram[i] = 0
+    histogram[:] = [0] * len(histogram)
 
     for pixel_y in range(image_height):
         y0 = y_top - height * (float(pixel_y) / float(image_height))
