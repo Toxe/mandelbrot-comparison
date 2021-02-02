@@ -83,7 +83,7 @@ def load_gradient(filename):
                         gradient.colors.append(GradientColor(float(data[0]), float(data[1]), float(data[2]), float(data[3])))
         gradient.colors.sort()
         return gradient
-    except IOError as e:
+    except IOError:
         return None
 
 
@@ -195,7 +195,7 @@ def save_image(filename, image_data):
     try:
         with open(filename, "wb") as f:
             f.write(image_data)
-    except IOError as e:
+    except IOError:
         return False
     return True
 
@@ -231,7 +231,7 @@ def eval_int_arg(s, min, max):
         if value < min or value > max:
             die(ExitCode.EVAL_ARGS)
         return value
-    except ValueError as e:
+    except ValueError:
         die(ExitCode.EVAL_ARGS)
 
 
@@ -241,7 +241,7 @@ def eval_float_arg(s, min, max):
         if value < min or value > max or math.isnan(value) or math.isinf(value):
             die(ExitCode.EVAL_ARGS)
         return value
-    except ValueError as e:
+    except ValueError:
         die(ExitCode.EVAL_ARGS)
 
 
@@ -269,7 +269,7 @@ def go(image_width, image_height, max_iterations, center_x, center_y, height, gr
     iterations_per_pixel = [0] * (image_width * image_height)
     smoothed_distances_to_next_iteration_per_pixel = [0.0] * (image_width * image_height)
 
-    for i in range(repetitions):
+    for _ in range(repetitions):
         t1 = time()
         mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel)
         mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors)
