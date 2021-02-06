@@ -97,7 +97,7 @@ function color_from_gradient($gradient, $pos)
 
 function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, &$histogram, &$iterations_per_pixel, &$smoothed_distances_to_next_iteration_per_pixel)
 {
-    $width = $height * (floatval($image_width) / floatval($image_height));
+    $width = $height * ($image_width / $image_height);
 
     $x_left   = $center_x - $width / 2.0;
     // $x_right  = $center_x + $width / 2.0;
@@ -113,10 +113,10 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
         $histogram[$i] = 0.0;
 
     for ($pixel_y = 0; $pixel_y < $image_height; ++$pixel_y) {
-        $y0 = $y_top - $height * (floatval($pixel_y) / floatval($image_height));
+        $y0 = $y_top - $height * ($pixel_y / $image_height);
 
         for ($pixel_x = 0; $pixel_x < $image_width; ++$pixel_x) {
-            $x0 = $x_left + $width * (floatval($pixel_x) / floatval($image_width));
+            $x0 = $x_left + $width * ($pixel_x / $image_width);
 
             $x = 0.0;
             $y = 0.0;
@@ -155,7 +155,7 @@ function mandelbrot_colorize($image_width, $image_height, $max_iterations, $grad
 {
     // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
     // are points in the Mandelbrot Set).
-    $total_iterations = floatval(array_sum(array_slice($histogram, 1, -1)));
+    $total_iterations = array_sum(array_slice($histogram, 1, -1));
 
     // Normalize the colors (0.0 .. 1.0) based on how often they are used in the image, not counting
     // histogram[max_iterations] (which are points in the Mandelbrot Set).
