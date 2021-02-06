@@ -27,10 +27,14 @@ REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([
 
 class GradientColor:
     def __init__(self, pos, r, g, b):
-        self.pos = pos
-        self.r = r
-        self.g = g
-        self.b = b
+        self.pos = float(pos)
+        self.update_colors(r, g, b)
+
+    def update_colors(self, r, g, b):
+        self.r = float(r)
+        self.g = float(g)
+        self.b = float(b)
+
     def __lt__(self, other):
         return self.pos < other.pos
 
@@ -65,11 +69,9 @@ def load_gradient(filename):
                 data = match.groups()
                 col = gradient_get_color_at_position(gradient, float(data[0]))
                 if col:
-                    col.r = float(data[1])
-                    col.g = float(data[2])
-                    col.b = float(data[3])
+                    col.update_colors(data[1], data[2], data[3])
                 else:
-                    gradient.colors.append(GradientColor(float(data[0]), float(data[1]), float(data[2]), float(data[3])))
+                    gradient.colors.append(GradientColor(data[0], data[1], data[2], data[3]))
     gradient.colors.sort()
     return gradient
 

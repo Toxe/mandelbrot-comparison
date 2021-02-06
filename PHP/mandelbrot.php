@@ -18,10 +18,15 @@ class GradientColor
 
     function __construct($pos, $r, $g, $b)
     {
-        $this->pos = $pos;
-        $this->r = $r;
-        $this->g = $g;
-        $this->b = $b;
+        $this->pos = (float) $pos;
+        $this->update_colors($r, $g, $b);
+    }
+
+    function update_colors($r, $g, $b)
+    {
+        $this->r = (float) $r;
+        $this->g = (float) $g;
+        $this->b = (float) $b;
     }
 }
 
@@ -57,13 +62,10 @@ function load_gradient($gradient_filename)
         if (preg_match($re, $line, $m)) {
             $col = gradient_get_color_at_position($gradient, floatval($m[1]));
 
-            if ($col) {
-                $col->r = floatval($m[2]);
-                $col->g = floatval($m[3]);
-                $col->b = floatval($m[4]);
-            } else {
-                $gradient->colors[] = new GradientColor(floatval($m[1]), floatval($m[2]), floatval($m[3]), floatval($m[4]));
-            }
+            if ($col)
+                $col->update_colors($m[2], $m[3], $m[4]);
+            else
+                $gradient->colors[] = new GradientColor($m[1], $m[2], $m[3], $m[4]);
         }
     }
 
