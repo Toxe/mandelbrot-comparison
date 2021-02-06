@@ -1,15 +1,15 @@
 <?php
-# PHP Mandelbrot.
-#
-# Usage: php mandelbrot.php <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
-# Example: php mandelbrot.php 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
-#
-# Gradient file example:
-#   0.0: 0.0, 0.0, 0.0
-#   0.5: 0.0, 0.0, 1.0
-#   1.0: 1.0, 1.0, 1.0
-#
-# Tobias Brückner, 2021
+// PHP Mandelbrot.
+//
+// Usage: php -d xdebug.mode=off mandelbrot.php <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+// Example: php -d xdebug.mode=off mandelbrot.php 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
+//
+// Gradient file example:
+//   0.0: 0.0, 0.0, 0.0
+//   0.5: 0.0, 0.0, 1.0
+//   1.0: 1.0, 1.0, 1.0
+//
+// Tobias Brückner, 2021
 
 class GradientColor
 {
@@ -109,7 +109,7 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
     $log_log_bailout = log(log($bailout));
     $log_2 = log(2.0);
 
-    for ($i = 0; $i < count($histogram); ++$i)  // TODO
+    for ($i = 0; $i < count($histogram); ++$i)
         $histogram[$i] = 0.0;
 
     for ($pixel_y = 0; $pixel_y < $image_height; ++$pixel_y) {
@@ -124,7 +124,7 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
             $x_squared = 0.0;
             $y_squared = 0.0;
 
-            # iteration, will be from 1 to max_iterations once the loop is done
+            // iteration, will be from 1 to max_iterations once the loop is done
             $iter = 0;
 
             while ($iter < $max_iterations) {
@@ -143,7 +143,7 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
             if ($iter < $max_iterations) {
                 $final_magnitude = sqrt($x_squared + $y_squared);
                 $smoothed_distances_to_next_iteration_per_pixel[$pixel_y * $image_width + $pixel_x] = 1.0 - min(1.0, (log(log($final_magnitude)) - $log_log_bailout) / $log_2);
-                $histogram[$iter] += 1;  # no need to count histogram[max_iterations]
+                $histogram[$iter] += 1;  // no need to count histogram[max_iterations]
             }
 
             $iterations_per_pixel[$pixel_y * $image_width + $pixel_x] = $iter;  // 1 .. max_iterations
@@ -267,7 +267,7 @@ function eval_args()
 
 function go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, &$image_data, &$durations, $repetitions)
 {
-    # histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
+    // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     $histogram = array_fill(0, $max_iterations + 1, 0);
     $normalized_colors = array_fill(0, $max_iterations + 1, 0.0);
     $iterations_per_pixel = array_fill(0, $image_width * $image_height, 0);
