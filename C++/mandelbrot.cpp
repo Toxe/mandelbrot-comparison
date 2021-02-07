@@ -191,7 +191,7 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
 
     for (std::size_t i = 1; i < static_cast<std::size_t>(max_iterations); ++i) {
         running_total += histogram[i];
-        normalized_colors[i] = running_total / total_iterations;
+        normalized_colors[i] = static_cast<float>(running_total) / total_iterations;
     }
 
     auto iter = iterations_per_pixel.cbegin();  // in range of 1 .. max_iterations
@@ -232,7 +232,7 @@ bool save_image(const std::string& filename, const std::vector<PixelColor>& imag
 
 double mean(const std::vector<double>& values)
 {
-    return std::accumulate(values.begin(), values.end(), 0.0) / values.size();
+    return std::accumulate(values.begin(), values.end(), 0.0) / static_cast<double>(values.size());
 }
 
 double median(const std::vector<double>& values)
