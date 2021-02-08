@@ -180,9 +180,9 @@ def save_image(filename, image_data):
 
 def show_summary(durations):
     if len(durations) == 1:
-        print("%f s" % durations[0])
+        print(f"{durations[0]} s")
     else:
-        print("mean: %f s, median: %f s (repetitions=%d) %s" % (statistics.mean(durations), statistics.median(durations), len(durations), str(sorted(durations))))
+        print(f"mean: {statistics.mean(durations)} s, median: {statistics.median(durations)} s (repetitions={len(durations)})", sorted(durations))
 
 
 def eval_int_arg(s, min, max):
