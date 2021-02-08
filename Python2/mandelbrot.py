@@ -126,13 +126,13 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             iter = 0
 
             for iter in xrange(max_iterations + 1):
-                x_squared = x*x
-                y_squared = y*y
+                x_squared = x * x
+                y_squared = y * y
 
                 if x_squared + y_squared >= bailout_squared:
                     break
 
-                y = 2.0*x*y + y0
+                y = 2.0 * x * y + y0
                 x = x_squared - y_squared + x0
 
             if iter < max_iterations:
@@ -263,5 +263,5 @@ def main():
     show_summary(durations)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
