@@ -166,29 +166,26 @@ function mandelbrot_colorize($image_width, $image_height, $max_iterations, $grad
         $normalized_colors[$i] = $running_total / $total_iterations;
     }
 
-    for ($pixel_y = 0; $pixel_y < $image_height; ++$pixel_y) {
-        for ($pixel_x = 0; $pixel_x < $image_width; ++$pixel_x) {
-            $pixel = $pixel_y * $image_width + $pixel_x;
-            $iter = $iterations_per_pixel[$pixel];  // 1 .. max_iterations
+    for ($pixel = 0; $pixel < $image_width * $image_height; ++$pixel) {
+        $iter = $iterations_per_pixel[$pixel];  // 1 .. max_iterations
 
-            if ($iter == $max_iterations) {
-                // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
-                $image_data[3 * $pixel + 0] = 0;
-                $image_data[3 * $pixel + 1] = 0;
-                $image_data[3 * $pixel + 2] = 0;
-            } else {
-                // we use the color of the previous iteration in order to cover the full gradient range
-                $color_of_previous_iter = $normalized_colors[$iter - 1];
-                $color_of_current_iter  = $normalized_colors[$iter];
-                $smoothed_distance_to_next_iteration = $smoothed_distances_to_next_iteration_per_pixel[$pixel];  // 0 .. <1.0
-                $pos_in_gradient = $color_of_previous_iter + $smoothed_distance_to_next_iteration * ($color_of_current_iter - $color_of_previous_iter);
+        if ($iter == $max_iterations) {
+            // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
+            $image_data[3 * $pixel + 0] = 0;
+            $image_data[3 * $pixel + 1] = 0;
+            $image_data[3 * $pixel + 2] = 0;
+        } else {
+            // we use the color of the previous iteration in order to cover the full gradient range
+            $color_of_previous_iter = $normalized_colors[$iter - 1];
+            $color_of_current_iter  = $normalized_colors[$iter];
+            $smoothed_distance_to_next_iteration = $smoothed_distances_to_next_iteration_per_pixel[$pixel];  // 0 .. <1.0
+            $pos_in_gradient = $color_of_previous_iter + $smoothed_distance_to_next_iteration * ($color_of_current_iter - $color_of_previous_iter);
 
-                [$r, $g, $b] = color_from_gradient($gradient, $pos_in_gradient);
+            [$r, $g, $b] = color_from_gradient($gradient, $pos_in_gradient);
 
-                $image_data[3 * $pixel + 0] = intval(255.0 * $r);
-                $image_data[3 * $pixel + 1] = intval(255.0 * $g);
-                $image_data[3 * $pixel + 2] = intval(255.0 * $b);
-            }
+            $image_data[3 * $pixel + 0] = intval(255.0 * $r);
+            $image_data[3 * $pixel + 1] = intval(255.0 * $g);
+            $image_data[3 * $pixel + 2] = intval(255.0 * $b);
         }
     }
 }
