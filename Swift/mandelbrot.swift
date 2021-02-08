@@ -191,30 +191,27 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
         normalizedColors[i] = Float(runningTotal) / Float(totalIterations)
     }
 
-    for pixelY in 0 ..< imageHeight {
-        for pixelX in 0 ..< imageWidth {
-            let pixel = pixelY * imageWidth + pixelX
-            let iter = iterationsPerPixel[pixel]  // 1 .. max_iterations
+    for pixel in 0 ..< imageWidth * imageHeight {
+        let iter = iterationsPerPixel[pixel]  // 1 .. max_iterations
 
-            if iter == maxIterations {
-                // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
-                imageData[3 * pixel + 0] = 0
-                imageData[3 * pixel + 1] = 0
-                imageData[3 * pixel + 2] = 0
-            } else {
-                // we use the color of the previous iteration in order to cover the full gradient range
-                let colorOfPreviousIter = normalizedColors[iter - 1]
-                let colorOfCurrentIter  = normalizedColors[iter]
+        if iter == maxIterations {
+            // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
+            imageData[3 * pixel + 0] = 0
+            imageData[3 * pixel + 1] = 0
+            imageData[3 * pixel + 2] = 0
+        } else {
+            // we use the color of the previous iteration in order to cover the full gradient range
+            let colorOfPreviousIter = normalizedColors[iter - 1]
+            let colorOfCurrentIter  = normalizedColors[iter]
 
-                let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixel]  // 0 .. <1.0
-                let posInGradient = colorOfPreviousIter + smoothedDistanceToNextIteration * (colorOfCurrentIter - colorOfPreviousIter)
+            let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixel]  // 0 .. <1.0
+            let posInGradient = colorOfPreviousIter + smoothedDistanceToNextIteration * (colorOfCurrentIter - colorOfPreviousIter)
 
-                let (r, g, b) = colorFromGradient(gradient, posInGradient)
+            let (r, g, b) = colorFromGradient(gradient, posInGradient)
 
-                imageData[3 * pixel + 0] = UInt8(255.0 * r)
-                imageData[3 * pixel + 1] = UInt8(255.0 * g)
-                imageData[3 * pixel + 2] = UInt8(255.0 * b)
-            }
+            imageData[3 * pixel + 0] = UInt8(255.0 * r)
+            imageData[3 * pixel + 1] = UInt8(255.0 * g)
+            imageData[3 * pixel + 2] = UInt8(255.0 * b)
         }
     }
 }
