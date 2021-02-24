@@ -157,19 +157,19 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
 
 def equalize_histogram(iterations_histogram, max_iterations):
-    # Sum all iterations, not counting the points inside the Mandelbrot Set (at the last position
-    # iterations_histogram[max_iterations]) and the first one (which we don't use).
-    total_iterations = sum(iterations_histogram[1:-1])
-
-    # calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts
+    # Calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts.
+    # Element [0] is unused and iterations_histogram[max_iterations] should be zero (as we do not count
+    # the iterations of the points inside the Mandelbrot Set).
     cdf = cumsum(iterations_histogram)
 
-    # find the minimum value in the CDF that is bigger than zero
+    # Get the minimum value in the CDF that is bigger than zero and the sum of all iteration counts
+    # from iterations_histogram (which is the last value of the CDF).
     cdf_min = next(iter(filter(lambda x: x > 0, cdf)))
+    total_iterations = cdf[-1]
 
     # normalize all values from the CDF that are bigger than zero to a range of 0.0 .. max_iterations
     f = max_iterations / float(total_iterations - cdf_min)
-    return map(lambda c: (c - cdf_min) * f if c > 0 else 0, cdf)
+    return list(map(lambda c: (c - cdf_min) * f if c > 0 else 0, cdf))
 
 
 def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel):
