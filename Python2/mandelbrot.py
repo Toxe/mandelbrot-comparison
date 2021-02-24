@@ -109,7 +109,7 @@ def color_from_gradient(gradient, pos):
     return None
 
 
-def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel):
+def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_per_pixel, distances_to_next_iteration_per_pixel):
     width = height * (float(image_width) / float(image_height))
     x_left = center_x - width / 2.0
     # x_right = center_x + width / 2.0
@@ -121,7 +121,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     log_log_bailout = log(log(bailout))
     log_2 = log(2.0)
 
-    iterations_histogram[:] = [0] * len(iterations_histogram)
+    # for simplicity we only use indices [1] .. [max_iterations], [0] is unused
+    iterations_histogram = [0] * (max_iterations + 1)
 
     for pixel_y in xrange(image_height):
         y0 = y_top - height * (float(pixel_y) / float(image_height))
@@ -154,6 +155,7 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
                 iterations_histogram[iter] += 1  # no need to count histogram[max_iterations]
 
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
+    return iterations_histogram
 
 
 def equalize_histogram(iterations_histogram, max_iterations):
@@ -258,14 +260,12 @@ def eval_args():
 
 
 def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions):
-    # iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    iterations_histogram = [0] * (max_iterations + 1)
     iterations_per_pixel = [0] * (image_width * image_height)
     distances_to_next_iteration_per_pixel = [0.0] * (image_width * image_height)
 
     for _ in xrange(repetitions):
         t1 = time()
-        mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel)
+        iterations_histogram = mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_per_pixel, distances_to_next_iteration_per_pixel)
         mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel)
         t2 = time()
         durations.append(t2 - t1)
