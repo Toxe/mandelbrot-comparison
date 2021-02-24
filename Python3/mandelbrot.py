@@ -138,21 +138,21 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             if iter < max_iterations:
                 final_magnitude = sqrt(x_squared + y_squared)
                 distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
-                iterations_histogram[iter] += 1  # no need to count histogram[max_iterations]
+                iterations_histogram[iter] += 1  # iter: 1 .. max_iterations-1, no need to count iterations_histogram[max_iterations]
 
-            iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
+            iterations_per_pixel[pixel_y * image_width + pixel_x] = iter
 
 
 def equalize_histogram(iterations_histogram, max_iterations):
-    # Sum all iterations, not counting the points inside the Mandelbrot Set (at the last position
-    # iterations_histogram[max_iterations]) and the first one (which we don't use).
-    total_iterations = sum(iterations_histogram[1:-1])
-
-    # calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts
+    # Calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts.
+    # Element [0] is unused and iterations_histogram[max_iterations] should be zero (as we do not count
+    # the iterations of the points inside the Mandelbrot Set).
     cdf = list(accumulate(iterations_histogram))
 
-    # find the minimum value in the CDF that is bigger than zero
+    # Get the minimum value in the CDF that is bigger than zero and the sum of all iteration counts
+    # from iterations_histogram (which is the last value of the CDF).
     cdf_min = next(filter(lambda x: x > 0, cdf))
+    total_iterations = cdf[-1]
 
     # normalize all values from the CDF that are bigger than zero to a range of 0.0 .. max_iterations
     f = max_iterations / (total_iterations - cdf_min)
