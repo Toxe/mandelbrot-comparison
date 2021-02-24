@@ -20,6 +20,7 @@ import statistics
 
 from time import time
 from math import log, sqrt
+from itertools import accumulate
 
 
 REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
@@ -42,6 +43,10 @@ class GradientColor:
 class Gradient:
     def __init__(self):
         self.colors = []
+
+
+def lerp(a, b, t):
+    return (1.0 - t) * a + t * b
 
 
 # Compare two float values for "enough" equality.
@@ -91,7 +96,7 @@ def color_from_gradient(gradient, pos):
     return None
 
 
-def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel):
+def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel):
     width = height * (float(image_width) / float(image_height))
     x_left = center_x - width / 2.0
     # x_right = center_x + width / 2.0
@@ -103,7 +108,7 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     log_log_bailout = log(log(bailout))
     log_2 = log(2.0)
 
-    histogram[:] = [0] * len(histogram)
+    iterations_histogram[:] = [0] * len(iterations_histogram)
 
     for pixel_y in range(image_height):
         y0 = y_top - height * (float(pixel_y) / float(image_height))
@@ -117,7 +122,7 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
             x_squared = 0.0
             y_squared = 0.0
 
-            # iteration, will be from 1 to max_iterations once the loop is done
+            # iteration, will be from 1 .. max_iterations once the loop is done
             iter = 0
 
             for iter in range(max_iterations + 1):
@@ -132,39 +137,49 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
             if iter < max_iterations:
                 final_magnitude = sqrt(x_squared + y_squared)
-                smoothed_distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
-                histogram[iter] += 1  # no need to count histogram[max_iterations]
+                distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
+                iterations_histogram[iter] += 1  # no need to count histogram[max_iterations]
 
             iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
 
 
-def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors):
-    # Sum all iterations, not counting the last one at position histogram[max_iterations] (which
-    # are points in the Mandelbrot Set).
-    total_iterations = float(sum(histogram[1:-1]))
+def equalize_histogram(iterations_histogram, max_iterations):
+    # Sum all iterations, not counting the points inside the Mandelbrot Set (at the last position
+    # iterations_histogram[max_iterations]) and the first one (which we don't use).
+    total_iterations = sum(iterations_histogram[1:-1])
 
-    # Normalize the colors (0.0 .. 1.0) based on how often they are used in the image, not counting
-    # histogram[max_iterations] (which are points in the Mandelbrot Set).
-    running_total = 0
+    # calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts
+    cdf = list(accumulate(iterations_histogram))
 
-    for i in range(1, max_iterations):
-        running_total += histogram[i]
-        normalized_colors[i] = float(running_total) / total_iterations
+    # find the minimum value in the CDF that is bigger than zero
+    cdf_min = next(filter(lambda x: x > 0, cdf))
+
+    # normalize all values from the CDF that are bigger than zero to a range of 0.0 .. max_iterations
+    f = max_iterations / (total_iterations - cdf_min)
+    return list(map(lambda c: (c - cdf_min) * f if c > 0 else 0, cdf))
+
+
+def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel):
+    equalized_iterations = equalize_histogram(iterations_histogram, max_iterations)
 
     for pixel in range(image_width * image_height):
         iter = iterations_per_pixel[pixel]  # 1 .. max_iterations
 
         if iter == max_iterations:
-            # pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
+            # points inside the Mandelbrot Set are always painted black
             image_data[3 * pixel + 0] = 0
             image_data[3 * pixel + 1] = 0
             image_data[3 * pixel + 2] = 0
         else:
-            # we use the color of the previous iteration in order to cover the full gradient range
-            color_of_previous_iter = normalized_colors[iter - 1]
-            color_of_current_iter  = normalized_colors[iter]
-            smoothed_distance_to_next_iteration = smoothed_distances_to_next_iteration_per_pixel[pixel]  # 0 .. <1.0
-            pos_in_gradient = color_of_previous_iter + smoothed_distance_to_next_iteration * (color_of_current_iter - color_of_previous_iter)
+            # The equalized iteration value (in the range of 0 .. max_iterations) represents the
+            # position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
+            # To achieve smooth coloring we need to edge the equalized iteration towards the next
+            # iteration, determined by the distance between the two iterations.
+            iter_curr = equalized_iterations[iter]
+            iter_next = equalized_iterations[iter + 1]
+
+            smoothed_iteration = lerp(iter_curr, iter_next, distances_to_next_iteration_per_pixel[pixel])
+            pos_in_gradient = smoothed_iteration / max_iterations
 
             r, g, b = color_from_gradient(gradient, pos_in_gradient)
 
@@ -217,16 +232,15 @@ def eval_args():
 
 
 def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions):
-    # histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    histogram = [0] * (max_iterations + 1)
-    normalized_colors = [0.0] * (max_iterations + 1)
+    # iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
+    iterations_histogram = [0] * (max_iterations + 1)
     iterations_per_pixel = [0] * (image_width * image_height)
-    smoothed_distances_to_next_iteration_per_pixel = [0.0] * (image_width * image_height)
+    distances_to_next_iteration_per_pixel = [0.0] * (image_width * image_height)
 
     for _ in range(repetitions):
         t1 = time()
-        mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel)
-        mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, histogram, iterations_per_pixel, smoothed_distances_to_next_iteration_per_pixel, normalized_colors)
+        mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel)
+        mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel)
         t2 = time()
         durations.append(t2 - t1)
 
