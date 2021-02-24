@@ -1,5 +1,3 @@
-# coding=utf8
-
 # Python3 Mandelbrot.
 #
 # Usage: python3 mandelbrot.py <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
