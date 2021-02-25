@@ -277,7 +277,7 @@ def go(image_width, image_height, max_iterations, center_x, center_y, height, gr
 def main():
     image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
-    image_data = bytearray([0] * (image_width * image_height * 3))
+    image_data = bytearray(image_width * image_height * 3)
     durations = []
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
