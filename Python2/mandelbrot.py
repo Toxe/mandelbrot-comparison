@@ -124,6 +124,8 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     # for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     iterations_histogram = [0] * (max_iterations + 1)
 
+    pixel = 0
+
     for pixel_y in xrange(image_height):
         y0 = y_top - height * (float(pixel_y) / float(image_height))
 
@@ -151,10 +153,11 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
 
             if iter < max_iterations:
                 final_magnitude = sqrt(x_squared + y_squared)
-                distances_to_next_iteration_per_pixel[pixel_y * image_width + pixel_x] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
+                distances_to_next_iteration_per_pixel[pixel] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
                 iterations_histogram[iter] += 1  # no need to count histogram[max_iterations]
 
-            iterations_per_pixel[pixel_y * image_width + pixel_x] = iter  # 1 .. max_iterations
+            iterations_per_pixel[pixel] = iter
+            pixel += 1
     return iterations_histogram
 
 
