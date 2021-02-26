@@ -47,17 +47,8 @@ def lerp(a, b, t):
     return (1.0 - t) * a + t * b
 
 
-# Compare two float values for "enough" equality.
-float_epsilon = sys.float_info.epsilon
-
-def equal_enough(a, b):
-    a = abs(a)
-    b = abs(b)
-    return abs(a - b) <= max(a, b) * float_epsilon
-
-
 def gradient_get_color_at_position(gradient, pos):
-    return next(filter(lambda col: equal_enough(col.pos, pos), gradient.colors), None)
+    return next(filter(lambda col: math.isclose(col.pos, pos), gradient.colors), None)
 
 
 def load_gradient(filename):
