@@ -88,9 +88,9 @@ def color_from_gradient(gradient, pos):
 def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_per_pixel, distances_to_next_iteration_per_pixel):
     width = height * image_width / image_height
     x_left = center_x - width / 2.0
-    # x_right = center_x + width / 2.0
+    x_right = center_x + width / 2.0
     y_top = center_y + height / 2.0
-    # y_bottom = center_y - height / 2.0
+    y_bottom = center_y - height / 2.0
 
     bailout = 20.0
     bailout_squared = bailout * bailout
@@ -103,10 +103,10 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     pixel = 0
 
     for pixel_y in range(image_height):
-        y0 = y_top - height * pixel_y / image_height
+        y0 = lerp(y_top, y_bottom, pixel_y / image_height)
 
         for pixel_x in range(image_width):
-            x0 = x_left + width * pixel_x / image_width
+            x0 = lerp(x_left, x_right, pixel_x / image_width)
 
             x = 0.0
             y = 0.0
