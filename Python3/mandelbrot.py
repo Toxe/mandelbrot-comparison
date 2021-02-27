@@ -71,10 +71,10 @@ def load_gradient(filename):
 
 
 def color_from_gradient_range(left_color, right_color, pos):
-    pos2 = (pos - left_color.pos) / (right_color.pos - left_color.pos)
-    r = (right_color.r - left_color.r) * pos2 + left_color.r
-    g = (right_color.g - left_color.g) * pos2 + left_color.g
-    b = (right_color.b - left_color.b) * pos2 + left_color.b
+    relative_pos_between_colors = (pos - left_color.pos) / (right_color.pos - left_color.pos)
+    r = lerp(left_color.r, right_color.r, relative_pos_between_colors)
+    g = lerp(left_color.g, right_color.g, relative_pos_between_colors)
+    b = lerp(left_color.b, right_color.b, relative_pos_between_colors)
     return r, g, b
 
 
