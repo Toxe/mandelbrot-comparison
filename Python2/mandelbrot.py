@@ -260,22 +260,22 @@ def eval_args():
     return image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename
 
 
-def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, durations, repetitions):
+def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, repetitions):
+    durations = []
     for _ in xrange(repetitions):
         t1 = time()
         results_per_point, iterations_histogram = mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height)
         image_data = mandelbrot_colorize(max_iterations, gradient, iterations_histogram, results_per_point)
         t2 = time()
         durations.append(t2 - t1)
-    return image_data
+    return image_data, durations
 
 
 def main():
     image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
-    durations = []
 
-    image_data = go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, durations, repetitions)
+    image_data, durations = go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, repetitions)
 
     save_image(filename, image_data)
     show_summary(durations)
