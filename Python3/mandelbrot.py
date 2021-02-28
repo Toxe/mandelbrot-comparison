@@ -75,7 +75,7 @@ def color_from_gradient_range(left_color, right_color, pos):
     r = lerp(left_color.r, right_color.r, relative_pos_between_colors)
     g = lerp(left_color.g, right_color.g, relative_pos_between_colors)
     b = lerp(left_color.b, right_color.b, relative_pos_between_colors)
-    return r, g, b
+    return int(255.0 * r), int(255.0 * g), int(255.0 * b)
 
 
 def color_from_gradient(gradient, pos):
@@ -85,7 +85,7 @@ def color_from_gradient(gradient, pos):
     return None
 
 
-def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_per_pixel, distances_to_next_iteration_per_pixel):
+def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height):
     width = height * image_width / image_height
     x_left = center_x - width / 2.0
     x_right = center_x + width / 2.0
@@ -100,7 +100,9 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
     # for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     iterations_histogram = [0] * (max_iterations + 1)
 
-    pixel = 0
+    # For every point store a tuple consisting of the final iteration and (for escaped points)
+    # the distance to the next iteration (as value of 0.0 .. 1.0).
+    results_per_point = []
 
     for pixel_y in range(image_height):
         y0 = lerp(y_top, y_bottom, pixel_y / image_height)
@@ -128,13 +130,13 @@ def mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_
                 x = x_squared - y_squared + x0
 
             if iter < max_iterations:
-                final_magnitude = sqrt(x_squared + y_squared)
-                distances_to_next_iteration_per_pixel[pixel] = 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)
                 iterations_histogram[iter] += 1  # iter: 1 .. max_iterations-1, no need to count iterations_histogram[max_iterations]
+                final_magnitude = sqrt(x_squared + y_squared)
+                results_per_point.append((iter, 1.0 - min(1.0, (log(log(final_magnitude)) - log_log_bailout) / log_2)))
+            else:
+                results_per_point.append((iter, 0.0))
 
-            iterations_per_pixel[pixel] = iter
-            pixel += 1
-    return iterations_histogram
+    return results_per_point, iterations_histogram
 
 
 def equalize_histogram(iterations_histogram, max_iterations):
@@ -153,17 +155,11 @@ def equalize_histogram(iterations_histogram, max_iterations):
     return list(map(lambda c: (c - cdf_min) * f if c > 0 else 0, cdf))
 
 
-def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel):
-    equalized_iterations = equalize_histogram(iterations_histogram, max_iterations)
-
-    for pixel in range(image_width * image_height):
-        iter = iterations_per_pixel[pixel]  # 1 .. max_iterations
-
+def colorize_points(max_iterations, gradient, equalized_iterations, results_per_point):
+    for iter, distance_to_next_iteration in results_per_point:
         if iter == max_iterations:
             # points inside the Mandelbrot Set are always painted black
-            image_data[3 * pixel + 0] = 0
-            image_data[3 * pixel + 1] = 0
-            image_data[3 * pixel + 2] = 0
+            yield (0, 0, 0)
         else:
             # The equalized iteration value (in the range of 0 .. max_iterations) represents the
             # position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
@@ -172,19 +168,21 @@ def mandelbrot_colorize(image_width, image_height, max_iterations, gradient, ima
             iter_curr = equalized_iterations[iter]
             iter_next = equalized_iterations[iter + 1]
 
-            smoothed_iteration = lerp(iter_curr, iter_next, distances_to_next_iteration_per_pixel[pixel])
+            smoothed_iteration = lerp(iter_curr, iter_next, distance_to_next_iteration)
             pos_in_gradient = smoothed_iteration / max_iterations
 
-            r, g, b = color_from_gradient(gradient, pos_in_gradient)
+            yield color_from_gradient(gradient, pos_in_gradient)
 
-            image_data[3 * pixel + 0] = int(255.0 * r)
-            image_data[3 * pixel + 1] = int(255.0 * g)
-            image_data[3 * pixel + 2] = int(255.0 * b)
+
+def mandelbrot_colorize(max_iterations, gradient, iterations_histogram, results_per_point):
+    equalized_iterations = equalize_histogram(iterations_histogram, max_iterations)
+    return list(colorize_points(max_iterations, gradient, equalized_iterations, results_per_point))
 
 
 def save_image(filename, image_data):
     with open(filename, "wb") as f:
-        f.write(image_data)
+        for rgb in image_data:
+            f.write(bytes(rgb))
 
 
 def show_summary(durations):
@@ -225,25 +223,22 @@ def eval_args():
     return image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename
 
 
-def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions):
-    iterations_per_pixel = [0] * (image_width * image_height)
-    distances_to_next_iteration_per_pixel = [0.0] * (image_width * image_height)
-
+def go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, durations, repetitions):
     for _ in range(repetitions):
         t1 = time()
-        iterations_histogram = mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height, iterations_per_pixel, distances_to_next_iteration_per_pixel)
-        mandelbrot_colorize(image_width, image_height, max_iterations, gradient, image_data, iterations_histogram, iterations_per_pixel, distances_to_next_iteration_per_pixel)
+        results_per_point, iterations_histogram = mandelbrot_calc(image_width, image_height, max_iterations, center_x, center_y, height)
+        image_data = mandelbrot_colorize(max_iterations, gradient, iterations_histogram, results_per_point)
         t2 = time()
         durations.append(t2 - t1)
+    return image_data
 
 
 def main():
     image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename = eval_args()
     gradient = load_gradient(gradient_filename)
-    image_data = bytearray(image_width * image_height * 3)
     durations = []
 
-    go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions)
+    image_data = go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, durations, repetitions)
 
     save_image(filename, image_data)
     show_summary(durations)
