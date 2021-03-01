@@ -22,14 +22,6 @@
 #include <sys/time.h>
 #endif
 
-typedef enum exitcode_t {
-    ERROR_ALLOC_MEMORY = 1,
-    ERROR_EVAL_ARGS,
-    ERROR_LOAD_GRADIENT,
-    ERROR_SAVE_IMAGE,
-    ERROR_GETTIME
-} exitcode_t;
-
 typedef struct
 {
     float pos;
@@ -44,10 +36,10 @@ typedef struct
 } gradient_t;
 
 
-void die(exitcode_t error)
+void die(char *reason)
 {
-    fprintf(stderr, "Error: %d\n", error);
-    exit(error);
+    fprintf(stderr, "Runtime error: %s\n", reason);
+    exit(1);
 }
 
 // Compare two float values for "enough" equality.
@@ -95,12 +87,12 @@ gradient_t *load_gradient(char *filename)
     char buf[256];
 
     if (!(gradient = (gradient_t *) malloc(sizeof(gradient_t))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     gradient->num_colors = 2;
 
     if (!(gradient->colors = (gradient_color_t *) malloc(gradient->num_colors * sizeof(gradient_color_t))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     gradient->colors[0].pos = 0.0;
     gradient->colors[0].r = 0.0;
@@ -317,7 +309,7 @@ double median(const double *values, int num_values)
     double *sorted_values;
 
     if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
@@ -343,13 +335,13 @@ char *durations2string(const double *values, int num_values)
     int pos;
 
     if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     memcpy(sorted_values, values, num_values * sizeof(double));
     qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
 
     if (!(buf = (char *) malloc(buf_len * sizeof(char))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     sprintf(buf, "[");
     pos = strlen(buf);
@@ -362,7 +354,7 @@ char *durations2string(const double *values, int num_values)
             buf_len += 256;
 
             if (!(buf = (char *) realloc(buf, buf_len)))
-                die(ERROR_ALLOC_MEMORY);
+                die("alloc memory");
         }
 
         memcpy(buf + pos, tmp, tmp_len + 1);
@@ -402,7 +394,7 @@ double gettime()
     struct timeval tv;
 
     if (gettimeofday(&tv, NULL) != 0)
-        die(ERROR_GETTIME);
+        die("gettimeofday");
 
     return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 #endif
@@ -416,7 +408,7 @@ int eval_int_arg(const char *s, int min, int max)
     value = strtol(s, NULL, 0);
 
     if (errno == ERANGE || value < min || value > max)
-        die(ERROR_EVAL_ARGS);
+        die("invalid value");
 
     return value;
 }
@@ -429,16 +421,16 @@ double eval_double_arg(const char *s, double min, double max)
     value = strtod(s, NULL);
 
     if (errno == ERANGE || value < min || value > max || isnan(value) || isinf(value))
-        die(ERROR_EVAL_ARGS);
+        die("invalid value");
 
     return value;
 }
 
-int eval_args(int argc, char **argv, int *image_width, int *image_height, int *max_iterations, int *repetitions,
+void eval_args(int argc, char **argv, int *image_width, int *image_height, int *max_iterations, int *repetitions,
               double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
     if (argc != 10)
-        return -1;
+        die("invalid number of arguments");
 
     *image_width    = eval_int_arg(argv[1], 1, 100000);
     *image_height   = eval_int_arg(argv[2], 1, 100000);
@@ -449,8 +441,6 @@ int eval_args(int argc, char **argv, int *image_width, int *image_height, int *m
     *height         = eval_double_arg(argv[7], -100.0, 100.0);
     *colors         = argv[8];
     *filename       = argv[9];
-
-    return 0;
 }
 
 void go(int image_width, int image_height, int max_iterations, double center_x, double center_y, double height, gradient_t *gradient, unsigned char *image_data, double *durations, int repetitions)
@@ -462,16 +452,16 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
 
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     if (!(histogram = (int *) malloc((max_iterations + 1) * sizeof(int))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     if (!(normalized_colors = (float *) malloc((max_iterations + 1) * sizeof(float))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     if (!(iterations_per_pixel = (int *) malloc(image_width * image_height * sizeof(int))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     if (!(smoothed_distances_to_next_iteration_per_pixel = (float *) malloc(image_width * image_height * sizeof(float))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     for (int i = 0; i < repetitions; ++i) {
         double t1, t2;
@@ -500,22 +490,21 @@ int main(int argc, char **argv)
     unsigned char *image_data;
     gradient_t *gradient;
 
-    if (eval_args(argc, argv, &image_width, &image_height, &max_iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename) < 0)
-        die(ERROR_EVAL_ARGS);
+    eval_args(argc, argv, &image_width, &image_height, &max_iterations, &repetitions, &center_x, &center_y, &height, &gradient_filename, &filename);
 
     if (!(gradient = load_gradient(gradient_filename)))
-        die(ERROR_LOAD_GRADIENT);
+        die("unable to load gradient");
 
     if (!(image_data = (unsigned char *) malloc(image_width * image_height * 3 * sizeof(unsigned char))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     if (!(durations = (double *) malloc(repetitions * sizeof(double))))
-        die(ERROR_ALLOC_MEMORY);
+        die("alloc memory");
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
 
     if (save_image(filename, image_data, image_width, image_height) < 0)
-        die(ERROR_SAVE_IMAGE);
+        die("unable to save output file");
 
     show_summary(durations, repetitions);
 
