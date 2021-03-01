@@ -60,20 +60,18 @@ Gradient load_gradient(const std::string& filename)
     if (!in.is_open())
         throw std::runtime_error("unable to open gradient file");
 
-    const std::regex re{R"(([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+))"};
+    const std::regex re{R"(([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)$)"};
     std::smatch m;
 
     while (std::getline(in, line)) {
         if (std::regex_match(line, m, re)) {
-            if (m.size() == 4+1) {
-                float pos = std::stof(m[1]);
-                auto col = std::find(gradient.colors.begin(), gradient.colors.end(), pos);
+            float pos = std::stof(m[1]);
+            auto col = std::find(gradient.colors.begin(), gradient.colors.end(), pos);
 
-                if (col != gradient.colors.end())
-                    *col = GradientColor{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
-                else
-                    gradient.colors.push_back({pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])});
-            }
+            if (col != gradient.colors.end())
+                *col = GradientColor{pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])};
+            else
+                gradient.colors.push_back({pos, std::stof(m[2]), std::stof(m[3]), std::stof(m[4])});
         }
     }
 

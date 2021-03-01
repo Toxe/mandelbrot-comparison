@@ -49,26 +49,24 @@ func loadGradient(_ filename: String) throws -> Gradient {
 
     let contentsOfFile = try String(contentsOfFile: filename)
     let lines = contentsOfFile.components(separatedBy: "\n")
-    let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)")
+    let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)$")
 
     for line in lines {
         let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.count))
 
         if matches.count == 1 {
-            if matches[0].numberOfRanges == 4+1 {
-                let pos = Float((line as NSString).substring(with: matches[0].range(at: 1)))
-                let r = Float((line as NSString).substring(with: matches[0].range(at: 2)))
-                let g = Float((line as NSString).substring(with: matches[0].range(at: 3)))
-                let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
+            let pos = Float((line as NSString).substring(with: matches[0].range(at: 1)))
+            let r = Float((line as NSString).substring(with: matches[0].range(at: 2)))
+            let g = Float((line as NSString).substring(with: matches[0].range(at: 3)))
+            let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
 
-                if pos != nil && r != nil && g != nil && b != nil {
-                    if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
-                        gradient.colors[index].r = r!
-                        gradient.colors[index].g = g!
-                        gradient.colors[index].b = b!
-                    } else {
-                        gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
-                    }
+            if pos != nil && r != nil && g != nil && b != nil {
+                if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
+                    gradient.colors[index].r = r!
+                    gradient.colors[index].g = g!
+                    gradient.colors[index].b = b!
+                } else {
+                    gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
                 }
             }
         }
