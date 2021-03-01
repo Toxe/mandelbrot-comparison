@@ -9,12 +9,8 @@
 
 import Foundation
 
-enum ExitCode: Int32 {
-    case ALLOC_MEMORY = 1
-    case EVAL_ARGS
-    case LOAD_GRADIENT
-    case SAVE_IMAGE
-    case GETTIME
+enum RuntimeError: Error {
+    case error(reason: String)
 }
 
 struct GradientColor {
@@ -45,45 +41,40 @@ func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Float) -> In
     return nil
 }
 
-func loadGradient(_ filename: String) -> Gradient? {
+func loadGradient(_ filename: String) throws -> Gradient {
     var gradient = Gradient()
 
     gradient.colors.append(GradientColor(pos: 0.0, r: 0.0, g: 0.0, b: 0.0))
     gradient.colors.append(GradientColor(pos: 1.0, r: 1.0, g: 1.0, b: 1.0))
 
-    do {
-        let contentsOfFile = try String(contentsOfFile: filename)
-        let lines = contentsOfFile.components(separatedBy: "\n")
-        let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)")
+    let contentsOfFile = try String(contentsOfFile: filename)
+    let lines = contentsOfFile.components(separatedBy: "\n")
+    let regex = try NSRegularExpression(pattern: "([0-9]*\\.?[0-9]+):\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+),\\s*([0-9]*\\.?[0-9]+)")
 
-        for line in lines {
-            let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.count))
+    for line in lines {
+        let matches = regex.matches(in: line, options: [], range: NSMakeRange(0, line.count))
 
-            if matches.count == 1 {
-                if matches[0].numberOfRanges == 4+1 {
-                    let pos = Float((line as NSString).substring(with: matches[0].range(at: 1)))
-                    let r = Float((line as NSString).substring(with: matches[0].range(at: 2)))
-                    let g = Float((line as NSString).substring(with: matches[0].range(at: 3)))
-                    let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
+        if matches.count == 1 {
+            if matches[0].numberOfRanges == 4+1 {
+                let pos = Float((line as NSString).substring(with: matches[0].range(at: 1)))
+                let r = Float((line as NSString).substring(with: matches[0].range(at: 2)))
+                let g = Float((line as NSString).substring(with: matches[0].range(at: 3)))
+                let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
 
-                    if pos != nil && r != nil && g != nil && b != nil {
-                        if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
-                            gradient.colors[index].r = r!
-                            gradient.colors[index].g = g!
-                            gradient.colors[index].b = b!
-                        } else {
-                            gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
-                        }
+                if pos != nil && r != nil && g != nil && b != nil {
+                    if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
+                        gradient.colors[index].r = r!
+                        gradient.colors[index].g = g!
+                        gradient.colors[index].b = b!
+                    } else {
+                        gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
                     }
                 }
             }
         }
-    } catch {
-        return nil
     }
 
     gradient.colors.sort { $0.pos < $1.pos }
-
     return gradient
 }
 
@@ -211,15 +202,9 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
     }
 }
 
-func saveImageData(_ filename: String, _ imageData: [UInt8]) -> Bool {
-    do {
-        let d = Data(imageData)
-        try d.write(to: URL(fileURLWithPath: filename, isDirectory: false))
-    } catch {
-        return false
-    }
-
-    return true
+func saveImageData(_ filename: String, _ imageData: [UInt8]) throws {
+    let d = Data(imageData)
+    try d.write(to: URL(fileURLWithPath: filename, isDirectory: false))
 }
 
 func mean(_ values: [Double]) -> Double {
@@ -250,40 +235,35 @@ func showSummary(_ durations: [Double]) {
     }
 }
 
-func die(_ error: ExitCode) -> Never {
-    print("Error: \(error.rawValue)")
-    exit(error.rawValue)
-}
-
-func evalIntArgument(_ s: String, min: Int, max: Int) -> Int {
+func evalIntArgument(_ s: String, min: Int, max: Int) throws -> Int {
     guard let value = Int(s) else {
-        die(ExitCode.EVAL_ARGS)
+        throw RuntimeError.error(reason: "invalid value \(s)")
     }
 
     return value
 }
 
-func evalDoubleArgument(_ s: String, min: Double, max: Double) -> Double {
+func evalDoubleArgument(_ s: String, min: Double, max: Double) throws -> Double {
     guard let value = Double(s) else {
-        die(ExitCode.EVAL_ARGS)
+        throw RuntimeError.error(reason: "invalid value \(s)")
     }
 
     return value
 }
 
-func evalArguments(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double, Double, String, String)
+func evalArguments(_ arguments: [String]) throws -> (Int, Int, Int, Int, Double, Double, Double, String, String)
 {
     if arguments.count != 10 {
-        die(ExitCode.EVAL_ARGS)
+        throw RuntimeError.error(reason: "invalid number of arguments")
     }
 
-    let imageWidth  = evalIntArgument(arguments[1], min: 1, max: 100_000)
-    let imageHeight = evalIntArgument(arguments[2], min: 1, max: 100_000)
-    let iterations  = evalIntArgument(arguments[3], min: 1, max: 1_000_000_000)
-    let repetitions = evalIntArgument(arguments[4], min: 1, max: 1_000_000)
-    let centerX     = evalDoubleArgument(arguments[5], min: -100.0, max: 100.0)
-    let centerY     = evalDoubleArgument(arguments[6], min: -100.0, max: 100.0)
-    let height      = evalDoubleArgument(arguments[7], min: -100.0, max: 100.0)
+    let imageWidth  = try evalIntArgument(arguments[1], min: 1, max: 100_000)
+    let imageHeight = try evalIntArgument(arguments[2], min: 1, max: 100_000)
+    let iterations  = try evalIntArgument(arguments[3], min: 1, max: 1_000_000_000)
+    let repetitions = try evalIntArgument(arguments[4], min: 1, max: 1_000_000)
+    let centerX     = try evalDoubleArgument(arguments[5], min: -100.0, max: 100.0)
+    let centerY     = try evalDoubleArgument(arguments[6], min: -100.0, max: 100.0)
+    let height      = try evalDoubleArgument(arguments[7], min: -100.0, max: 100.0)
     let colors      = arguments[8]
     let filename    = arguments[9]
 
@@ -307,21 +287,15 @@ func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: 
     }
 }
 
-func main() {
-    let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = evalArguments(CommandLine.arguments)
-
-    guard let gradient = loadGradient(gradientFilename) else {
-        die(ExitCode.LOAD_GRADIENT)
-    }
+func main() throws {
+    let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = try evalArguments(CommandLine.arguments)
+    let gradient = try loadGradient(gradientFilename)
 
     var imageData = [UInt8](repeating: 0, count: imageWidth * imageHeight * 3)
     var durations = [Double]()
 
     go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient, &imageData, &durations, repetitions)
 
-    if !saveImageData(filename, imageData) {
-        die(ExitCode.SAVE_IMAGE)
-    }
-
+    try saveImageData(filename, imageData)
     showSummary(durations)
 }
