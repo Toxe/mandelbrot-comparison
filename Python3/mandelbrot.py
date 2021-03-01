@@ -16,9 +16,6 @@ from math import log, sqrt
 from itertools import accumulate
 
 
-REGEXP_GRADIENT_LINE = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
-
-
 class GradientColor:
     def __init__(self, pos, r, g, b):
         self.pos = float(pos)
@@ -51,9 +48,11 @@ def load_gradient(filename):
     gradient.colors.append(GradientColor(0.0, 0.0, 0.0, 0.0))
     gradient.colors.append(GradientColor(1.0, 1.0, 1.0, 1.0))
 
+    pattern = re.compile(r'([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+)')
+
     with open(filename, "r") as f:
         for line in f:
-            match = REGEXP_GRADIENT_LINE.match(line)
+            match = pattern.match(line)
             if match:
                 data = match.groups()
                 col = gradient_get_color_at_position(gradient, float(data[0]))
