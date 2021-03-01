@@ -229,7 +229,7 @@ double median(const std::vector<double>& values)
 void show_summary(const std::vector<double>& durations)
 {
     if (durations.size() == 1) {
-        std::cout << durations[0] << " s" << std::endl;
+        std::cout << durations[0] << " s" << '\n';
     } else {
         std::vector<double> sorted_values{durations};
         std::sort(sorted_values.begin(), sorted_values.end());
@@ -240,7 +240,7 @@ void show_summary(const std::vector<double>& durations)
         for (auto p = std::next(sorted_values.cbegin()); p != sorted_values.cend(); ++p)
             std::cout << ", " << *p;
 
-        std::cout << "]" << std::endl;
+        std::cout << "]" << '\n';
     }
 }
 
