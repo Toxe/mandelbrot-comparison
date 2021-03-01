@@ -40,7 +40,7 @@ function equal_enough($a, $b)
 
 function gradient_get_color_at_position($gradient, $pos)
 {
-    return current(array_filter($gradient->colors, fn ($c) => equal_enough($c->pos, $pos)));
+    return current(array_filter($gradient->colors, fn($c) => equal_enough($c->pos, $pos)));
 }
 
 function load_gradient($gradient_filename)
@@ -67,7 +67,7 @@ function load_gradient($gradient_filename)
 
     fclose($fp);
 
-    usort($gradient->colors, fn ($a, $b) => $a->pos <=> $b->pos);
+    usort($gradient->colors, fn($a, $b) => $a->pos <=> $b->pos);
     return $gradient;
 }
 
