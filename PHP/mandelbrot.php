@@ -51,7 +51,8 @@ function load_gradient($gradient_filename)
     $gradient->colors[] = new GradientColor(0.0, 0.0, 0.0, 0.0);
     $gradient->colors[] = new GradientColor(1.0, 1.0, 1.0, 1.0);
 
-    $fp = fopen($gradient_filename, "r");
+    if (!($fp = fopen($gradient_filename, "r")))
+        throw new RuntimeException("unable to open gradient file");
 
     while ($line = fgets($fp)) {
         if (preg_match($re, $line, $m)) {
@@ -203,7 +204,9 @@ function median($values)
 
 function save_image($filename, $image_data)
 {
-    $fp = fopen($filename, "wb");
+    if (!($fp = fopen($filename, "wb")))
+        throw new RuntimeException("unable to open output file");
+
     fwrite($fp, pack("C*", ...$image_data));
     fclose($fp);
 }
