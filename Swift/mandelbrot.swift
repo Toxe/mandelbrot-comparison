@@ -273,7 +273,7 @@ func evalDoubleArgument(_ s: String, min: Double, max: Double) -> Double {
 
 func evalArguments(_ arguments: [String]) -> (Int, Int, Int, Int, Double, Double, Double, String, String)
 {
-    if arguments.count < 10 {
+    if arguments.count != 10 {
         die(ExitCode.EVAL_ARGS)
     }
 

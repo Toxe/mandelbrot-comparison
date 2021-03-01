@@ -202,7 +202,7 @@ def eval_float_arg(s, min, max):
 
 
 def eval_args():
-    if len(sys.argv) < 10:
+    if len(sys.argv) != 10:
         raise RuntimeError("invalid number of arguments")
 
     image_width    = eval_int_arg(sys.argv[1], 1, 100000)

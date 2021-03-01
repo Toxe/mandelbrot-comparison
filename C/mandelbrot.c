@@ -437,7 +437,7 @@ double eval_double_arg(const char *s, double min, double max)
 int eval_args(int argc, char **argv, int *image_width, int *image_height, int *max_iterations, int *repetitions,
               double *center_x, double *center_y, double *height, char **colors, char **filename)
 {
-    if (argc < 10)
+    if (argc != 10)
         return -1;
 
     *image_width    = eval_int_arg(argv[1], 1, 100000);
