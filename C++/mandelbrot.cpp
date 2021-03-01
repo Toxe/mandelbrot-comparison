@@ -17,17 +17,10 @@
 #include <numeric>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
-
-enum class Error {
-    AllocMemory = 1,
-    EvalArgs,
-    LoadGradient,
-    SaveImage,
-    GetTime
-};
 
 // Compare two float values for "enough" equality.
 bool equal_enough(float a, float b) noexcept
@@ -55,12 +48,6 @@ struct Gradient {
     std::vector<GradientColor> colors;
 };
 
-void die(Error error)
-{
-    std::cerr << "Error: " << static_cast<int>(error) << std::endl;
-    std::exit(static_cast<int>(error));
-}
-
 Gradient load_gradient(const std::string& filename)
 {
     Gradient gradient;
@@ -71,7 +58,7 @@ Gradient load_gradient(const std::string& filename)
     std::string line;
 
     if (!in.is_open())
-        die(Error::LoadGradient);
+        throw std::runtime_error("unable to open gradient file");
 
     const std::regex re{R"(([0-9]*\.?[0-9]+):\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+),\s*([0-9]*\.?[0-9]+))"};
     std::smatch m;
@@ -212,17 +199,15 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
     }
 }
 
-bool save_image(const std::string& filename, const std::vector<PixelColor>& image_data)
+void save_image(const std::string& filename, const std::vector<PixelColor>& image_data)
 {
     std::ofstream out{filename, std::ofstream::binary};
 
     if (!out.is_open())
-        return false;
+        throw std::runtime_error("unable to open output file");
 
     for (auto p : image_data)
         out << p.r << p.g << p.b;
-
-    return true;
 }
 
 double mean(const std::vector<double>& values)
@@ -266,7 +251,7 @@ T eval_arg(const char* s, T min, T max)
     std::istringstream in{s};
 
     if (!(in >> value) || value < min || value > max)
-        die(Error::EvalArgs);
+        throw std::runtime_error("invalid value");
 
     return value;
 }
@@ -274,7 +259,7 @@ T eval_arg(const char* s, T min, T max)
 std::tuple<int, int, int, int, double, double, double, std::string, std::string> eval_args(const int argc, char const* argv[])
 {
     if (argc != 10)
-        die(Error::EvalArgs);
+        throw std::runtime_error("invalid number of arguments");
 
     auto image_width    = eval_arg(argv[1], 1, 100000);
     auto image_height   = eval_arg(argv[2], 1, 100000);
@@ -317,8 +302,6 @@ int main(int argc, char const* argv[])
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
 
-    if (!save_image(filename, image_data))
-        die(Error::SaveImage);
-
+    save_image(filename, image_data);
     show_summary(durations);
 }
