@@ -1,13 +1,8 @@
 /*
  * C Mandelbrot.
  *
- * Usage: mandelbrot_c <image_width> <image_height> <max_iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
- * Example: mandelbrot_c 320 200 20 1 -0.5 0.0 2.0 blue.gradient mandelbrot.raw
- *
- * Gradient file example:
- *   0.0: 0.0, 0.0, 0.0
- *   0.5: 0.0, 0.0, 1.0
- *   1.0: 1.0, 1.0, 1.0
+ * Usage: ./build/C/mandelbrot_c <image width> <image height> <max iterations> <repetitions (1+)> <center x> <center y> <section height> <gradient filename> <output filename>
+ * Example: ./build/C/mandelbrot_c 800 600 200 1 -0.8 0.0 2.2 gradients/benchmark.gradient mandelbrot.raw
  *
  * Tobias Brückner, 2016
  */
