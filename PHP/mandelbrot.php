@@ -260,13 +260,14 @@ function eval_args()
     return [$image_width, $image_height, $max_iterations, $repetitions, $center_x, $center_y, $height, $gradient_filename, $filename];
 }
 
-function go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, &$image_data, &$durations, $repetitions)
+function go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, &$image_data, $repetitions)
 {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     $histogram = array_fill(0, $max_iterations + 1, 0);
     $normalized_colors = array_fill(0, $max_iterations + 1, 0.0);
     $iterations_per_pixel = array_fill(0, $image_width * $image_height, 0);
     $smoothed_distances_to_next_iteration_per_pixel = array_fill(0, $image_width * $image_height, 0);
+    $durations = [];
 
     for ($i = 0; $i < $repetitions; ++$i) {
         $t1 = microtime(true);
@@ -276,6 +277,8 @@ function go($image_width, $image_height, $max_iterations, $center_x, $center_y, 
 
         $durations[] = $t2 - $t1;
     }
+
+    return $durations;
 }
 
 function main()
@@ -283,9 +286,8 @@ function main()
     [$image_width, $image_height, $max_iterations, $repetitions, $center_x, $center_y, $height, $gradient_filename, $filename] = eval_args();
     $gradient = load_gradient($gradient_filename);
     $image_data = array_fill(0, 3 * $image_width * $image_height, 0);
-    $durations = [];
 
-    go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, $image_data, $durations, $repetitions);
+    $durations = go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, $image_data, $repetitions);
 
     save_image($filename, $image_data);
     show_summary($durations);
