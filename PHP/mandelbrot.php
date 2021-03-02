@@ -186,6 +186,15 @@ function mandelbrot_colorize($image_width, $image_height, $max_iterations, $grad
     }
 }
 
+function save_image($filename, $image_data)
+{
+    if (!($fp = fopen($filename, "wb")))
+        throw new RuntimeException("unable to open output file");
+
+    fwrite($fp, pack("C*", ...$image_data));
+    fclose($fp);
+}
+
 function mean($values)
 {
     return array_sum($values) / count($values);
@@ -200,15 +209,6 @@ function median($values)
         return $sorted_values[(count($sorted_values) - 1) / 2];
     else
         return ($sorted_values[count($sorted_values) / 2 - 1] + $sorted_values[count($sorted_values) / 2]) / 2.0;
-}
-
-function save_image($filename, $image_data)
-{
-    if (!($fp = fopen($filename, "wb")))
-        throw new RuntimeException("unable to open output file");
-
-    fwrite($fp, pack("C*", ...$image_data));
-    fclose($fp);
 }
 
 function show_summary($durations)
