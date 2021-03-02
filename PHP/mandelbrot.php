@@ -91,10 +91,10 @@ function load_gradient($gradient_filename)
 
 function color_from_gradient_range($left_color, $right_color, $pos)
 {
-    $pos2 = ($pos - $left_color->pos) / ($right_color->pos - $left_color->pos);
-    $r = ($right_color->r - $left_color->r) * $pos2 + $left_color->r;
-    $g = ($right_color->g - $left_color->g) * $pos2 + $left_color->g;
-    $b = ($right_color->b - $left_color->b) * $pos2 + $left_color->b;
+    $relative_pos_between_colors = ($pos - $left_color->pos) / ($right_color->pos - $left_color->pos);
+    $r = lerp($left_color->r, $right_color->r, $relative_pos_between_colors);
+    $g = lerp($left_color->g, $right_color->g, $relative_pos_between_colors);
+    $b = lerp($left_color->b, $right_color->b, $relative_pos_between_colors);
     return [$r, $g, $b];
 }
 
@@ -114,9 +114,9 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
     $width = $height * ($image_width / $image_height);
 
     $x_left   = $center_x - $width / 2.0;
-    // $x_right  = $center_x + $width / 2.0;
+    $x_right  = $center_x + $width / 2.0;
     $y_top    = $center_y + $height / 2.0;
-    // $y_bottom = $center_y - $height / 2.0;
+    $y_bottom = $center_y - $height / 2.0;
 
     $bailout = 20.0;
     $bailout_squared = $bailout * $bailout;
@@ -129,10 +129,10 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
     $pixel = 0;
 
     for ($pixel_y = 0; $pixel_y < $image_height; ++$pixel_y) {
-        $y0 = $y_top - $height * ($pixel_y / $image_height);
+        $y0 = lerp($y_top, $y_bottom, $pixel_y / $image_height);
 
         for ($pixel_x = 0; $pixel_x < $image_width; ++$pixel_x) {
-            $x0 = $x_left + $width * ($pixel_x / $image_width);
+            $x0 = lerp($x_left, $x_right, $pixel_x / $image_width);
 
             $x = 0.0;
             $y = 0.0;
