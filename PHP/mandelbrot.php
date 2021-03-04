@@ -41,8 +41,8 @@ function cumsum($hist)
     $total = 0;
 
     foreach ($hist as $n) {
-    	$total += $n;
-    	$cdf[] = $total;
+        $total += $n;
+        $cdf[] = $total;
     }
 
     return $cdf;
