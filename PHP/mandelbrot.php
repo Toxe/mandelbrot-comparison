@@ -95,7 +95,7 @@ function color_from_gradient_range($left_color, $right_color, $pos)
     $r = lerp($left_color->r, $right_color->r, $relative_pos_between_colors);
     $g = lerp($left_color->g, $right_color->g, $relative_pos_between_colors);
     $b = lerp($left_color->b, $right_color->b, $relative_pos_between_colors);
-    return [$r, $g, $b];
+    return [chr(255.0 * $r), chr(255.0 * $g), chr(255.0 * $b)];
 }
 
 function color_from_gradient($gradient, $pos)
@@ -157,9 +157,9 @@ function mandelbrot_calc($image_width, $image_height, $max_iterations, $center_x
             }
 
             if ($iter < $max_iterations) {
+                $iterations_histogram[$iter] += 1;  // iter: 1 .. max_iterations-1, no need to count iterations_histogram[max_iterations]
                 $final_magnitude = sqrt($x_squared + $y_squared);
                 $distances_to_next_iteration_per_pixel[$pixel] = 1.0 - min(1.0, (log(log($final_magnitude)) - $log_log_bailout) / $log_2);
-                $iterations_histogram[$iter] += 1;  // iter: 1 .. max_iterations-1, no need to count iterations_histogram[max_iterations]
             }
 
             $iterations_per_pixel[$pixel] = $iter;
@@ -196,9 +196,9 @@ function mandelbrot_colorize($image_width, $image_height, $max_iterations, $grad
 
         if ($iter == $max_iterations) {
             // points inside the Mandelbrot Set are always painted black
-            $image_data[3 * $pixel + 0] = 0;
-            $image_data[3 * $pixel + 1] = 0;
-            $image_data[3 * $pixel + 2] = 0;
+            $image_data[3 * $pixel + 0] = chr(0);
+            $image_data[3 * $pixel + 1] = chr(0);
+            $image_data[3 * $pixel + 2] = chr(0);
         } else {
             // The equalized iteration value (in the range of 0 .. max_iterations) represents the
             // position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
@@ -212,9 +212,9 @@ function mandelbrot_colorize($image_width, $image_height, $max_iterations, $grad
 
             [$r, $g, $b] = color_from_gradient($gradient, $pos_in_gradient);
 
-            $image_data[3 * $pixel + 0] = intval(255.0 * $r);
-            $image_data[3 * $pixel + 1] = intval(255.0 * $g);
-            $image_data[3 * $pixel + 2] = intval(255.0 * $b);
+            $image_data[3 * $pixel + 0] = $r;
+            $image_data[3 * $pixel + 1] = $g;
+            $image_data[3 * $pixel + 2] = $b;
         }
     }
 }
@@ -224,7 +224,7 @@ function save_image($filename, $image_data)
     if (!($fp = fopen($filename, "wb")))
         throw new RuntimeException("unable to open output file");
 
-    fwrite($fp, pack("C*", ...$image_data));
+    fwrite($fp, $image_data);
     fclose($fp);
 }
 
@@ -293,10 +293,13 @@ function eval_args()
     return [$image_width, $image_height, $max_iterations, $repetitions, $center_x, $center_y, $height, $gradient_filename, $filename];
 }
 
-function go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, &$image_data, $repetitions)
+function go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, $repetitions)
 {
+    // For every point store the final iteration and (for escaped points)
+    // the distance to the next iteration (as value of 0.0 .. 1.0).
     $iterations_per_pixel = array_fill(0, $image_width * $image_height, 0);
-    $distances_to_next_iteration_per_pixel = array_fill(0, $image_width * $image_height, 0);
+    $distances_to_next_iteration_per_pixel = array_fill(0, $image_width * $image_height, 0.0);
+    $image_data = str_pad("", 3 * $image_width * $image_height);
     $durations = [];
 
     for ($i = 0; $i < $repetitions; ++$i) {
@@ -308,16 +311,15 @@ function go($image_width, $image_height, $max_iterations, $center_x, $center_y, 
         $durations[] = $t2 - $t1;
     }
 
-    return $durations;
+    return [$image_data, $durations];
 }
 
 function main()
 {
     [$image_width, $image_height, $max_iterations, $repetitions, $center_x, $center_y, $height, $gradient_filename, $filename] = eval_args();
     $gradient = load_gradient($gradient_filename);
-    $image_data = array_fill(0, 3 * $image_width * $image_height, 0);
 
-    $durations = go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, $image_data, $repetitions);
+    [$image_data, $durations] = go($image_width, $image_height, $max_iterations, $center_x, $center_y, $height, $gradient, $repetitions);
 
     save_image($filename, $image_data);
     show_summary($durations);
