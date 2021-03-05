@@ -39,8 +39,8 @@ func cumsum(_ iterationsHistogram: [Int]) -> [Int] {
     var cdf = [Int](repeating: 0, count: iterationsHistogram.count)
     var total = 0
 
-    for i in 0..<iterationsHistogram.count {
-        total += iterationsHistogram[i]
+    for (i, n) in iterationsHistogram.enumerated() {
+        total += n
         cdf[i] = total
     }
 
