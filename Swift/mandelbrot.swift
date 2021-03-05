@@ -234,13 +234,7 @@ func saveImageData(_ filename: String, _ imageData: [UInt8]) throws {
 }
 
 func mean(_ values: [Double]) -> Double {
-    var sum = 0.0
-
-    for value in values {
-        sum += value
-    }
-
-    return sum / Double(values.count)
+    return values.reduce(0.0, { $0 + $1 }) / Double(values.count)
 }
 
 func median(_ values: [Double]) -> Double {
