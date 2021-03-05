@@ -142,6 +142,8 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
         iterationsHistogram[i] = 0
     }
 
+    var pixel = 0
+
     for pixelY in 0 ..< imageHeight {
         let y0 = lerp(yTop, yBottom, Double(pixelY) / Double(imageHeight))
 
@@ -169,14 +171,14 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
                 iter += 1
             }
 
-            let pixel = pixelY * imageWidth + pixelX
-
             if iter < maxIterations {
                 iterationsHistogram[iter] += 1  // iter: 1 .. maxIterations-1, no need to count iterationsHistogram[max_iterations]
                 resultsPerPoint[pixel] = CalculationResult(iter: 0, distanceToNextIteration: 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)))
             } else {
                 resultsPerPoint[pixel] = CalculationResult(iter: 0, distanceToNextIteration: 0.0)
             }
+
+            pixel += 1
         }
     }
 }
