@@ -22,6 +22,25 @@ struct Gradient {
     var colors = [GradientColor]()
 }
 
+func lerp(_ a: Float, _ b: Float, _ t: Float) -> Float {
+    return (1.0 - t) * a + t * b
+}
+
+func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double {
+    return (1.0 - t) * a + t * b
+}
+
+func cumsum(_ iterationsHistogram: [Int]) -> [Int] {
+    var cdf = [Int](repeating: 0, count: iterationsHistogram.count)
+    var total = 0
+
+    for i in 0..<iterationsHistogram.count {
+        total += iterationsHistogram[i]
+        cdf[i] = total
+    }
+
+    return cdf
+}
 
 // Compare two float values for "enough" equality.
 func equalEnough(_ a: Float, _ b: Float) -> Bool {
@@ -99,13 +118,13 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> (Float, 
     return (0.0, 0.0, 0.0)
 }
 
-func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ histogram: inout [Int], _ iterationsPerPixel: inout [Int], _ smoothedDistancesToNextIterationPerPixel: inout [Float]) {
+func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ iterationsHistogram: inout [Int], _ iterationsPerPixel: inout [Int], _ distancesToNextIterationPerPixel: inout [Float]) {
     let width = height * (Double(imageWidth) / Double(imageHeight))
 
     let xLeft   = centerX - width / 2.0
-//  let xRight  = centerX + width / 2.0
+    let xRight  = centerX + width / 2.0
     let yTop    = centerY + height / 2.0
-//  let yBottom = centerY - height / 2.0
+    let yBottom = centerY - height / 2.0
 
     let bailout = 20.0
     let bailoutSquared = bailout * bailout
@@ -114,20 +133,20 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
 
     var finalMagnitude = 0.0
 
-    for i in 0 ..< histogram.count {
-        histogram[i] = 0
+    for i in 0 ..< iterationsHistogram.count {
+        iterationsHistogram[i] = 0
     }
 
     for pixelY in 0 ..< imageHeight {
-        let y0 = yTop - height * (Double(pixelY) / Double(imageHeight))
+        let y0 = lerp(yTop, yBottom, Double(pixelY) / Double(imageHeight))
 
         for pixelX in 0 ..< imageWidth {
-            let x0 = xLeft + width * (Double(pixelX) / Double(imageWidth))
+            let x0 = lerp(xLeft, xRight, Double(pixelX) / Double(imageWidth))
 
             var x = 0.0
             var y = 0.0
 
-            // iteration, will be from 1 to max_iterations once the loop is done
+            // iteration, will be from 1 .. maxIterations once the loop is done
             var iter = 0
 
             while iter < maxIterations {
@@ -148,48 +167,52 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
             let pixel = pixelY * imageWidth + pixelX
 
             if iter < maxIterations {
-                smoothedDistancesToNextIterationPerPixel[pixel] = 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2))
-                histogram[iter] += 1  // no need to count histogram[max_iterations]
+                iterationsHistogram[iter] += 1  // iter: 1 .. maxIterations-1, no need to count iterationsHistogram[max_iterations]
+                distancesToNextIterationPerPixel[pixel] = 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2))
             }
 
-            iterationsPerPixel[pixel] = iter  // 1 .. max_iterations
+            iterationsPerPixel[pixel] = iter  // 1 .. maxIterations
         }
     }
 }
 
-func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [UInt8], _ histogram: [Int], _ iterationsPerPixel: [Int], _ smoothedDistancesToNextIterationPerPixel: [Float], _ normalizedColors: inout [Float]) {
-    // Sum all iterations, not counting the last one at position histogram[max_iterations] (which
-    // are points in the Mandelbrot Set).
-    var totalIterations = 0
+func equalizeHistogram(_ iterationsHistogram: [Int], _ maxIterations: Int) -> [Float] {
+    // Calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts.
+    // Element [0] is unused and iterationsHistogram[maxIterations] should be zero (as we do not count
+    // the iterations of the points inside the Mandelbrot Set).
+    let cdf = cumsum(iterationsHistogram)
 
-    for i in 1 ..< maxIterations {
-        totalIterations += histogram[i]
-    }
+    // Get the minimum value in the CDF that is bigger than zero and the sum of all iteration counts
+    // from iterationsHistogram (which is the last value of the CDF).
+    let cdfMin = cdf.first(where: { $0 > 0 })
+    let totalIterations = cdf.last
 
-    // Normalize the colors (0.0 .. 1.0) based on how often they are used in the image, not counting
-    // histogram[max_iterations] (which are points in the Mandelbrot Set).
-    var runningTotal = 0
+    // normalize all values from the CDF that are bigger than zero to a range of 0.0 .. maxIterations
+    let f = Float(maxIterations) / Float(totalIterations! - cdfMin!)
+    return cdf.map { $0 > 0 ? f * Float($0 - cdfMin!) : 0.0 }
+}
 
-    for i in 1 ..< maxIterations {
-        runningTotal += histogram[i]
-        normalizedColors[i] = Float(runningTotal) / Float(totalIterations)
-    }
+func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [UInt8], _ iterationsHistogram: [Int], _ iterationsPerPixel: [Int], _ distancesToNextIterationPerPixel: [Float]) {
+    let equalizedIterations = equalizeHistogram(iterationsHistogram, maxIterations)
 
     for pixel in 0 ..< imageWidth * imageHeight {
         let iter = iterationsPerPixel[pixel]  // 1 .. max_iterations
 
         if iter == maxIterations {
-            // pixels with max. iterations (aka. inside the Mandelbrot Set) are always black
+            // points inside the Mandelbrot Set are always painted black
             imageData[3 * pixel + 0] = 0
             imageData[3 * pixel + 1] = 0
             imageData[3 * pixel + 2] = 0
         } else {
-            // we use the color of the previous iteration in order to cover the full gradient range
-            let colorOfPreviousIter = normalizedColors[iter - 1]
-            let colorOfCurrentIter  = normalizedColors[iter]
+            // The equalized iteration value (in the range of 0 .. maxIterations) represents the
+            // position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
+            // To achieve smooth coloring we need to edge the equalized iteration towards the next
+            // iteration, determined by the distance between the two iterations.
+            let iterCurr = equalizedIterations[iter]
+            let iterNext = equalizedIterations[iter + 1]
 
-            let smoothedDistanceToNextIteration = smoothedDistancesToNextIterationPerPixel[pixel]  // 0 .. <1.0
-            let posInGradient = colorOfPreviousIter + smoothedDistanceToNextIteration * (colorOfCurrentIter - colorOfPreviousIter)
+            let smoothedIteration = lerp(iterCurr, iterNext, distancesToNextIterationPerPixel[pixel])
+            let posInGradient = smoothedIteration / Float(maxIterations)
 
             let (r, g, b) = colorFromGradient(gradient, posInGradient)
 
@@ -269,16 +292,15 @@ func evalArguments(_ arguments: [String]) throws -> (Int, Int, Int, Int, Double,
 }
 
 func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ imageData: inout [UInt8], _ durations: inout [Double], _ repetitions: Int) {
-    // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    var histogram = [Int](repeating: 0, count: maxIterations + 1)
-    var normalizedColors = [Float](repeating: 0, count: maxIterations + 1)
+    // iterationsHistogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
+    var iterationsHistogram = [Int](repeating: 0, count: maxIterations + 1)
     var iterationsPerPixel = [Int](repeating: 0, count: imageWidth * imageHeight)
-    var smoothedDistancesToNextIterationPerPixel = [Float](repeating: 0, count: imageWidth * imageHeight)
+    var distancesToNextIterationPerPixel = [Float](repeating: 0, count: imageWidth * imageHeight)
 
     for _ in 0 ..< repetitions {
         let t1 = Date()
-        mandelbrotCalc(imageWidth, imageHeight, maxIterations, centerX, centerY, height, &histogram, &iterationsPerPixel, &smoothedDistancesToNextIterationPerPixel)
-        mandelbrotColorize(imageWidth, imageHeight, maxIterations, gradient, &imageData, histogram, iterationsPerPixel, smoothedDistancesToNextIterationPerPixel, &normalizedColors)
+        mandelbrotCalc(imageWidth, imageHeight, maxIterations, centerX, centerY, height, &iterationsHistogram, &iterationsPerPixel, &distancesToNextIterationPerPixel)
+        mandelbrotColorize(imageWidth, imageHeight, maxIterations, gradient, &imageData, iterationsHistogram, iterationsPerPixel, distancesToNextIterationPerPixel)
         let t2 = Date()
 
         durations.append(t2.timeIntervalSince(t1))
