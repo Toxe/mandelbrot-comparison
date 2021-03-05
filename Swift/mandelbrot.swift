@@ -173,7 +173,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
 
             if iter < maxIterations {
                 iterationsHistogram[iter] += 1  // iter: 1 .. maxIterations-1, no need to count iterationsHistogram[max_iterations]
-                resultsPerPoint[pixel] = CalculationResult(iter: 0, distanceToNextIteration: 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)))
+                resultsPerPoint[pixel] = CalculationResult(iter: iter, distanceToNextIteration: 1.0 - Float(min(1.0, (log(log(finalMagnitude)) - logLogBailout) / log2)))
             } else {
                 resultsPerPoint[pixel] = CalculationResult(iter: 0, distanceToNextIteration: 0.0)
             }
