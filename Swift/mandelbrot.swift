@@ -288,13 +288,16 @@ func evalArguments(_ arguments: [String]) throws -> (Int, Int, Int, Int, Double,
     return (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, colors, filename)
 }
 
-func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ imageData: inout [PixelColor], _ durations: inout [Double], _ repetitions: Int) {
+func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ repetitions: Int) -> ([PixelColor], [Double]) {
     // iterationsHistogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     var iterationsHistogram = [Int](repeating: 0, count: maxIterations + 1)
 
     // For every point store a tuple consisting of the final iteration and (for escaped points)
     // the distance to the next iteration (as value of 0.0 .. 1.0).
     var resultsPerPoint = [CalculationResult](repeating: CalculationResult(iter: 0, distanceToNextIteration: 0.0), count: imageWidth * imageHeight)
+
+    var imageData = [PixelColor](repeating: PixelColor(r: 0, g: 0, b: 0), count: imageWidth * imageHeight)
+    var durations = [Double]();
 
     for _ in 0 ..< repetitions {
         let t1 = Date()
@@ -304,16 +307,15 @@ func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: 
 
         durations.append(t2.timeIntervalSince(t1))
     }
+
+    return (imageData, durations)
 }
 
 func main() throws {
     let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = try evalArguments(CommandLine.arguments)
     let gradient = try loadGradient(gradientFilename)
 
-    var imageData = [PixelColor](repeating: PixelColor(r: 0, g: 0, b: 0), count: imageWidth * imageHeight)
-    var durations = [Double]()
-
-    go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient, &imageData, &durations, repetitions)
+    let (imageData, durations) = go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient, repetitions)
 
     try saveImageData(filename, imageData)
     showSummary(durations)
