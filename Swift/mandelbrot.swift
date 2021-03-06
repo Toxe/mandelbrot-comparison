@@ -39,9 +39,9 @@ func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double {
     return (1.0 - t) * a + t * b
 }
 
-func cumsum(_ iterationsHistogram: [Int]) -> [Int] {
-    var cdf = [Int](repeating: 0, count: iterationsHistogram.count)
-    var total = 0
+func cumsum(_ iterationsHistogram: [Int32]) -> [Int32] {
+    var cdf = [Int32](repeating: 0, count: iterationsHistogram.count)
+    var total: Int32 = 0
 
     for (i, n) in iterationsHistogram.enumerated() {
         total += n
@@ -127,7 +127,7 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> PixelCol
     return PixelColor(r: 0, g: 0, b: 0)
 }
 
-func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ iterationsHistogram: inout [Int], _ resultsPerPoint: inout [CalculationResult]) {
+func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ iterationsHistogram: inout [Int32], _ resultsPerPoint: inout [CalculationResult]) {
     let width = height * (Double(imageWidth) / Double(imageHeight))
 
     let xLeft   = centerX - width / 2.0
@@ -187,7 +187,7 @@ func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int,
     }
 }
 
-func equalizeHistogram(_ iterationsHistogram: [Int], _ maxIterations: Int) -> [Float] {
+func equalizeHistogram(_ iterationsHistogram: [Int32], _ maxIterations: Int) -> [Float] {
     // Calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts.
     // Element [0] is unused and iterationsHistogram[maxIterations] should be zero (as we do not count
     // the iterations of the points inside the Mandelbrot Set).
@@ -203,7 +203,7 @@ func equalizeHistogram(_ iterationsHistogram: [Int], _ maxIterations: Int) -> [F
     return cdf.map { $0 > 0 ? f * Float($0 - cdfMin!) : 0.0 }
 }
 
-func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [PixelColor], _ iterationsHistogram: [Int], _ resultsPerPoint: [CalculationResult]) {
+func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [PixelColor], _ iterationsHistogram: [Int32], _ resultsPerPoint: [CalculationResult]) {
     let equalizedIterations = equalizeHistogram(iterationsHistogram, maxIterations)
 
     for (pixel, calcResult) in resultsPerPoint.enumerated() {
@@ -290,14 +290,14 @@ func evalArguments(_ arguments: [String]) throws -> (Int, Int, Int, Int, Double,
 
 func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ repetitions: Int) -> ([PixelColor], [Double]) {
     // iterationsHistogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    var iterationsHistogram = [Int](repeating: 0, count: maxIterations + 1)
+    var iterationsHistogram = [Int32](repeating: 0, count: maxIterations + 1)
 
     // For every point store a tuple consisting of the final iteration and (for escaped points)
     // the distance to the next iteration (as value of 0.0 .. 1.0).
     var resultsPerPoint = [CalculationResult](repeating: CalculationResult(iter: 0, distanceToNextIteration: 0.0), count: imageWidth * imageHeight)
 
     var imageData = [PixelColor](repeating: PixelColor(r: 0, g: 0, b: 0), count: imageWidth * imageHeight)
-    var durations = [Double]();
+    var durations = [Double]()
 
     for _ in 0 ..< repetitions {
         let t1 = Date()
