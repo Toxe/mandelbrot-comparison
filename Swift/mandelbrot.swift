@@ -105,10 +105,10 @@ func loadGradient(_ filename: String) throws -> Gradient {
 }
 
 func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Float) -> PixelColor {
-    let pos2 = (pos - left.pos) / (right.pos - left.pos)
-    let r = ((right.r - left.r) * pos2) + left.r
-    let g = ((right.g - left.g) * pos2) + left.g
-    let b = ((right.b - left.b) * pos2) + left.b
+    let relativePosBetweenColors = (pos - left.pos) / (right.pos - left.pos)
+    let r = lerp(left.r, right.r, relativePosBetweenColors)
+    let g = lerp(left.g, right.g, relativePosBetweenColors)
+    let b = lerp(left.b, right.b, relativePosBetweenColors)
     return PixelColor(r: UInt8(255.0 * r), g: UInt8(255.0 * g), b: UInt8(255.0 * b))
 }
 
