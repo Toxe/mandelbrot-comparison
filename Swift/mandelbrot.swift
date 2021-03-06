@@ -13,6 +13,10 @@ enum RuntimeError: Error {
     case error(reason: String)
 }
 
+struct PixelColor {
+    var r, g, b: UInt8
+}
+
 struct GradientColor {
     var pos: Float
     var r, g, b: Float
@@ -100,15 +104,15 @@ func loadGradient(_ filename: String) throws -> Gradient {
     return gradient
 }
 
-func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Float) -> (Float, Float, Float) {
+func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos: Float) -> PixelColor {
     let pos2 = (pos - left.pos) / (right.pos - left.pos)
-
-    return (((right.r - left.r) * pos2) + left.r,
-            ((right.g - left.g) * pos2) + left.g,
-            ((right.b - left.b) * pos2) + left.b)
+    let r = ((right.r - left.r) * pos2) + left.r
+    let g = ((right.g - left.g) * pos2) + left.g
+    let b = ((right.b - left.b) * pos2) + left.b
+    return PixelColor(r: UInt8(255.0 * r), g: UInt8(255.0 * g), b: UInt8(255.0 * b))
 }
 
-func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> (Float, Float, Float) {
+func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> PixelColor {
     var left = 0
     let colors = gradient.colors
 
@@ -120,7 +124,7 @@ func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> (Float, 
         left = right
     }
 
-    return (0.0, 0.0, 0.0)
+    return PixelColor(r: 0, g: 0, b: 0)
 }
 
 func mandelbrotCalc(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ iterationsHistogram: inout [Int], _ resultsPerPoint: inout [CalculationResult]) {
@@ -199,15 +203,13 @@ func equalizeHistogram(_ iterationsHistogram: [Int], _ maxIterations: Int) -> [F
     return cdf.map { $0 > 0 ? f * Float($0 - cdfMin!) : 0.0 }
 }
 
-func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [UInt8], _ iterationsHistogram: [Int], _ resultsPerPoint: [CalculationResult]) {
+func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ gradient: Gradient, _ imageData: inout [PixelColor], _ iterationsHistogram: [Int], _ resultsPerPoint: [CalculationResult]) {
     let equalizedIterations = equalizeHistogram(iterationsHistogram, maxIterations)
 
     for (pixel, calcResult) in resultsPerPoint.enumerated() {
         if calcResult.iter == maxIterations {
             // points inside the Mandelbrot Set are always painted black
-            imageData[3 * pixel + 0] = 0
-            imageData[3 * pixel + 1] = 0
-            imageData[3 * pixel + 2] = 0
+            imageData[pixel] = PixelColor(r: 0, g: 0, b: 0)
         } else {
             // The equalized iteration value (in the range of 0 .. maxIterations) represents the
             // position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
@@ -219,17 +221,13 @@ func mandelbrotColorize(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: 
             let smoothedIteration = lerp(iterCurr, iterNext, calcResult.distanceToNextIteration)
             let posInGradient = smoothedIteration / Float(maxIterations)
 
-            let (r, g, b) = colorFromGradient(gradient, posInGradient)
-
-            imageData[3 * pixel + 0] = UInt8(255.0 * r)
-            imageData[3 * pixel + 1] = UInt8(255.0 * g)
-            imageData[3 * pixel + 2] = UInt8(255.0 * b)
+            imageData[pixel] = colorFromGradient(gradient, posInGradient)
         }
     }
 }
 
-func saveImageData(_ filename: String, _ imageData: [UInt8]) throws {
-    let d = Data(imageData)
+func saveImageData(_ filename: String, _ imageData: [PixelColor]) throws {
+    let d = Data.init(bytes: imageData, count: MemoryLayout<PixelColor>.size * imageData.count)
     try d.write(to: URL(fileURLWithPath: filename, isDirectory: false))
 }
 
@@ -290,7 +288,7 @@ func evalArguments(_ arguments: [String]) throws -> (Int, Int, Int, Int, Double,
     return (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, colors, filename)
 }
 
-func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ imageData: inout [UInt8], _ durations: inout [Double], _ repetitions: Int) {
+func go(_ imageWidth: Int, _ imageHeight: Int, _ maxIterations: Int, _ centerX: Double, _ centerY: Double, _ height: Double, _ gradient: Gradient, _ imageData: inout [PixelColor], _ durations: inout [Double], _ repetitions: Int) {
     // iterationsHistogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     var iterationsHistogram = [Int](repeating: 0, count: maxIterations + 1)
 
@@ -312,7 +310,7 @@ func main() throws {
     let (imageWidth, imageHeight, iterations, repetitions, centerX, centerY, height, gradientFilename, filename) = try evalArguments(CommandLine.arguments)
     let gradient = try loadGradient(gradientFilename)
 
-    var imageData = [UInt8](repeating: 0, count: imageWidth * imageHeight * 3)
+    var imageData = [PixelColor](repeating: PixelColor(r: 0, g: 0, b: 0), count: imageWidth * imageHeight)
     var durations = [Double]()
 
     go(imageWidth, imageHeight, iterations, centerX, centerY, height, gradient, &imageData, &durations, repetitions)
