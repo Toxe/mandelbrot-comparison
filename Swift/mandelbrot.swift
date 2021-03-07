@@ -118,15 +118,10 @@ func colorFromGradientRange(_ left: GradientColor, _ right: GradientColor, _ pos
 }
 
 func colorFromGradient(_ gradient: Gradient, _ posInGradient: Float) -> PixelColor {
-    var left = 0
-    let colors = gradient.colors
-
-    for right in 1 ..< colors.count {
-        if posInGradient >= colors[left].pos && posInGradient <= colors[right].pos {
-            return colorFromGradientRange(colors[left], colors[right], posInGradient)
-        }
-
-        left = right
+    let colors = zip(gradient.colors.prefix(upTo: gradient.colors.endIndex - 1),
+                     gradient.colors.suffix(from: gradient.colors.startIndex + 1))
+    if let (left, right) = colors.first(where: { left, right in posInGradient >= left.pos && posInGradient <= right.pos }) {
+        return colorFromGradientRange(left, right, posInGradient)
     }
 
     return PixelColor(r: 0, g: 0, b: 0)
