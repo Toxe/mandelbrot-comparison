@@ -17,9 +17,22 @@ struct PixelColor {
     var r, g, b: UInt8
 }
 
-struct GradientColor {
-    var pos: Float
+class GradientColor {
+    let pos: Float
     var r, g, b: Float
+
+    init(pos: Float, r: Float, g: Float, b: Float) {
+        self.pos = pos
+        self.r = r
+        self.g = g
+        self.b = b
+    }
+
+    func updateColors(_ r: Float, _ g: Float, _ b: Float) {
+        self.r = r
+        self.g = g
+        self.b = b
+    }
 }
 
 struct Gradient {
@@ -59,14 +72,8 @@ func equalEnough(_ a: Float, _ b: Float) -> Bool {
     return abs(absA - absB) <= max(absA, absB) * Float.ulpOfOne
 }
 
-func gradientGetIndexOfColorAtPosition(_ gradient: Gradient, _ pos: Float) -> Int? {
-    for i in 0..<gradient.colors.count {
-        if equalEnough(gradient.colors[i].pos, pos) {
-            return i
-        }
-    }
-
-    return nil
+func gradientGetColorAtPosition(_ gradient: Gradient, _ pos: Float) -> GradientColor? {
+    return gradient.colors.first(where: { equalEnough($0.pos, pos) })
 }
 
 func loadGradient(_ filename: String) throws -> Gradient {
@@ -89,10 +96,8 @@ func loadGradient(_ filename: String) throws -> Gradient {
             let b = Float((line as NSString).substring(with: matches[0].range(at: 4)))
 
             if pos != nil && r != nil && g != nil && b != nil {
-                if let index = gradientGetIndexOfColorAtPosition(gradient, pos!) {
-                    gradient.colors[index].r = r!
-                    gradient.colors[index].g = g!
-                    gradient.colors[index].b = b!
+                if let col = gradientGetColorAtPosition(gradient, pos!) {
+                    col.updateColors(r!, g!, b!)
                 } else {
                     gradient.colors.append(GradientColor(pos: pos!, r: r!, g: g!, b: b!))
                 }
