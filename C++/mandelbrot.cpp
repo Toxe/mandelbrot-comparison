@@ -272,13 +272,16 @@ auto eval_args(const int argc, char const* argv[])
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename);
 }
 
-void go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, std::vector<PixelColor>& image_data, std::vector<double>& durations, const int repetitions) noexcept
+auto go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, const int repetitions) noexcept
 {
     // histogram & normalized_colors: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<int> histogram(static_cast<std::size_t>(max_iterations + 1));
     std::vector<float> normalized_colors(static_cast<std::size_t>(max_iterations + 1));
     std::vector<int> iterations_per_pixel(static_cast<std::size_t>(image_width * image_height));
     std::vector<float> smoothed_distances_to_next_iteration_per_pixel(static_cast<std::size_t>(image_width * image_height));
+
+    std::vector<PixelColor> image_data(static_cast<unsigned long>(image_width * image_height));
+    std::vector<double> durations;
 
     for (int i = 0; i < repetitions; ++i) {
         const auto t1 = std::chrono::high_resolution_clock::now();
@@ -288,6 +291,8 @@ void go(const int image_width, const int image_height, const int max_iterations,
 
         durations.push_back(std::chrono::duration<double>{t2 - t1}.count());
     }
+
+    return std::make_tuple(image_data, durations);
 }
 
 int main(int argc, char const* argv[])
@@ -295,10 +300,7 @@ int main(int argc, char const* argv[])
     auto [image_width, image_height, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename] = eval_args(argc, argv);
     auto gradient = load_gradient(gradient_filename);
 
-    std::vector<PixelColor> image_data(static_cast<unsigned long>(image_width * image_height));
-    std::vector<double> durations;
-
-    go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
+    auto [image_data, durations] = go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, repetitions);
 
     save_image(filename, image_data);
     show_summary(durations);
