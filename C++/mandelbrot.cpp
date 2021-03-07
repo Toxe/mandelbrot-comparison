@@ -254,7 +254,7 @@ T eval_arg(const char* s, T min, T max)
     return value;
 }
 
-std::tuple<int, int, int, int, double, double, double, std::string, std::string> eval_args(const int argc, char const* argv[])
+auto eval_args(const int argc, char const* argv[])
 {
     if (argc != 10)
         throw std::runtime_error("invalid number of arguments");
