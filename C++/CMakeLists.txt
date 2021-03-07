@@ -6,7 +6,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 add_executable(mandelbrot_cpp mandelbrot.cpp)
-target_compile_features(mandelbrot_cpp PUBLIC cxx_std_17)
+target_compile_features(mandelbrot_cpp PUBLIC cxx_std_20)
 set_target_properties(mandelbrot_cpp PROPERTIES CXX_EXTENSIONS OFF)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
