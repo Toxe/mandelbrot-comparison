@@ -1,7 +1,10 @@
 ![Mandelbrot Comparison](images/title.png)
 
 # Mandelbrot Comparison
+
 A comparison of Mandelbrot Set programs in different languages with histogram based smooth coloring and a built-in benchmark mode.
+
+Note: This README is in dire need of an update.
 
 ## Status
 
@@ -12,7 +15,7 @@ A comparison of Mandelbrot Set programs in different languages with histogram ba
 | Python2    | done   |
 | Python3    | done   |
 | Swift      | done   |
-| PHP 7.4    | WIP    |
+| PHP 7.4    | done   |
 | JavaScript | WIP    |
 
 ## Some background
