@@ -86,11 +86,10 @@ Gradient load_gradient(const std::string& filename)
 
 void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const float pos, PixelColor& pixel_color) noexcept
 {
-    const float pos2 = (pos - left.pos) / (right.pos - left.pos);
-
-    pixel_color.r = static_cast<unsigned char>(255.0f * (((right.r - left.r) * pos2) + left.r));
-    pixel_color.g = static_cast<unsigned char>(255.0f * (((right.g - left.g) * pos2) + left.g));
-    pixel_color.b = static_cast<unsigned char>(255.0f * (((right.b - left.b) * pos2) + left.b));
+    const float relative_pos_between_colors = (pos - left.pos) / (right.pos - left.pos);
+    pixel_color.r = static_cast<unsigned char>(255.0f * std::lerp(left.r, right.r, relative_pos_between_colors));
+    pixel_color.g = static_cast<unsigned char>(255.0f * std::lerp(left.g, right.g, relative_pos_between_colors));
+    pixel_color.b = static_cast<unsigned char>(255.0f * std::lerp(left.b, right.b, relative_pos_between_colors));
 }
 
 void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& pixel_color) noexcept
@@ -110,9 +109,9 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
     const double width = height * (static_cast<double>(image_width) / static_cast<double>(image_height));
 
     const double x_left   = center_x - width / 2.0;
- // const double x_right  = center_x + width / 2.0;
+    const double x_right  = center_x + width / 2.0;
     const double y_top    = center_y + height / 2.0;
- // const double y_bottom = center_y - height / 2.0;
+    const double y_bottom = center_y - height / 2.0;
 
     constexpr double bailout = 20.0;
     constexpr double bailout_squared = bailout * bailout;
@@ -126,10 +125,10 @@ void mandelbrot_calc(const int image_width, const int image_height, const int ma
     int pixel = 0;
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
-        const double y0 = y_top - height * (static_cast<double>(pixel_y) / static_cast<double>(image_height));
+        const double y0 = std::lerp(y_top, y_bottom, static_cast<double>(pixel_y) / static_cast<double>(image_height));
 
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            const double x0 = x_left + width * (static_cast<double>(pixel_x) / static_cast<double>(image_width));
+            const double x0 = std::lerp(x_left, x_right, static_cast<double>(pixel_x) / static_cast<double>(image_width));
 
             double x = 0.0;
             double y = 0.0;
