@@ -52,7 +52,12 @@ void die(char *reason)
     exit(1);
 }
 
-float lerp(const float a, const float b, const float t)
+float lerp_float(const float a, const float b, const float t)
+{
+    return (1.0f - t) * a + t * b;
+}
+
+float lerp_double(const double a, const double b, const double t)
 {
     return (1.0 - t) * a + t * b;
 }
@@ -163,16 +168,15 @@ void free_gradient(gradient_t *gradient)
     free(gradient);
 }
 
-void color_from_gradient_range(const gradient_color_t *left, const gradient_color_t *right, float pos, float *r, float *g, float *b)
+void color_from_gradient_range(const gradient_color_t *left, const gradient_color_t *right, float pos, pixel_color_t *color)
 {
-    float pos2 = (pos - left->pos) / (right->pos - left->pos);
-
-    *r = ((right->r - left->r) * pos2) + left->r;
-    *g = ((right->g - left->g) * pos2) + left->g;
-    *b = ((right->b - left->b) * pos2) + left->b;
+    const float relative_pos_between_colors = (pos - left->pos) / (right->pos - left->pos);
+    color->r = (unsigned char) (255.0f * lerp_float(left->r, right->r, relative_pos_between_colors));
+    color->g = (unsigned char) (255.0f * lerp_float(left->g, right->g, relative_pos_between_colors));
+    color->b = (unsigned char) (255.0f * lerp_float(left->b, right->b, relative_pos_between_colors));
 }
 
-int color_from_gradient(const gradient_t *gradient, float pos, float *r, float *g, float *b)
+int color_from_gradient(const gradient_t *gradient, float pos, pixel_color_t *color)
 {
     gradient_color_t *left = &gradient->colors[0];
 
@@ -180,7 +184,7 @@ int color_from_gradient(const gradient_t *gradient, float pos, float *r, float *
         gradient_color_t *right = &gradient->colors[i];
 
         if (pos >= left->pos && pos <= right->pos) {
-            color_from_gradient_range(left, right, pos, r, g, b);
+            color_from_gradient_range(left, right, pos, color);
             return 0;
         }
 
@@ -196,9 +200,9 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
     const double width = height * ((double) image_width / (double) image_height);
 
     const double x_left   = center_x - width / 2.0;
- // const double x_right  = center_x + width / 2.0;
+    const double x_right  = center_x + width / 2.0;
     const double y_top    = center_y + height / 2.0;
- // const double y_bottom = center_y - height / 2.0;
+    const double y_bottom = center_y - height / 2.0;
 
     const double bailout = 20.0;
     const double bailout_squared = bailout * bailout;
@@ -212,10 +216,10 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
     int pixel = 0;
 
     for (int pixel_y = 0; pixel_y < image_height; ++pixel_y) {
-        const double y0 = y_top - height * ((double) pixel_y / (double) image_height);
+        const double y0 = lerp_double(y_top, y_bottom, (double) pixel_y / (double) image_height);
 
         for (int pixel_x = 0; pixel_x < image_width; ++pixel_x) {
-            const double x0 = x_left + width * ((double) pixel_x / (double) image_width);
+            const double x0 = lerp_double(x_left, x_right, (double) pixel_x / (double) image_width);
 
             double x = 0.0;
             double y = 0.0;
@@ -312,18 +316,13 @@ void mandelbrot_colorize(const int image_width, const int image_height, const in
             // position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
             // To achieve smooth coloring we need to edge the equalized iteration towards the next
             // iteration, determined by the distance between the two iterations.
-            float r, g, b;
             const float iter_curr = equalized_iterations[results->iter];
             const float iter_next = equalized_iterations[results->iter + 1];
 
-            const float smoothed_iteration = lerp(iter_curr, iter_next, results->distance_to_next_iteration);
+            const float smoothed_iteration = lerp_float(iter_curr, iter_next, results->distance_to_next_iteration);
             const float pos_in_gradient = smoothed_iteration / (float) max_iterations;
 
-            color_from_gradient(gradient, pos_in_gradient, &r, &g, &b);
-
-            image_data[pixel].r = (unsigned char) (255.0f * r);
-            image_data[pixel].g = (unsigned char) (255.0f * g);
-            image_data[pixel].b = (unsigned char) (255.0f * b);
+            color_from_gradient(gradient, pos_in_gradient, &image_data[pixel]);
         }
     }
 
