@@ -84,15 +84,15 @@ Gradient load_gradient(const std::string& filename)
     return gradient;
 }
 
-void color_from_gradient_range(const GradientColor& left, const GradientColor& right, const float pos, PixelColor& pixel_color) noexcept
+PixelColor color_from_gradient_range(const GradientColor& left, const GradientColor& right, const float pos) noexcept
 {
     const float relative_pos_between_colors = (pos - left.pos) / (right.pos - left.pos);
-    pixel_color.r = static_cast<unsigned char>(255.0f * std::lerp(left.r, right.r, relative_pos_between_colors));
-    pixel_color.g = static_cast<unsigned char>(255.0f * std::lerp(left.g, right.g, relative_pos_between_colors));
-    pixel_color.b = static_cast<unsigned char>(255.0f * std::lerp(left.b, right.b, relative_pos_between_colors));
+    return PixelColor{static_cast<unsigned char>(255.0f * std::lerp(left.r, right.r, relative_pos_between_colors)),
+                      static_cast<unsigned char>(255.0f * std::lerp(left.g, right.g, relative_pos_between_colors)),
+                      static_cast<unsigned char>(255.0f * std::lerp(left.b, right.b, relative_pos_between_colors))};
 }
 
-void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& pixel_color) noexcept
+PixelColor color_from_gradient(const Gradient& gradient, const float pos) noexcept
 {
     const auto end = gradient.colors.cend();
 
@@ -100,7 +100,9 @@ void color_from_gradient(const Gradient& gradient, const float pos, PixelColor& 
         [&](const GradientColor& left, const GradientColor& right) { return left.pos <= pos && pos <= right.pos; });
 
     if (it != end)
-        color_from_gradient_range(*it, *(it+1), pos, pixel_color);
+        return color_from_gradient_range(*it, *(it + 1), pos);
+    else
+        return PixelColor{0, 0, 0};
 }
 
 void mandelbrot_calc(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height,
@@ -207,7 +209,7 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
             const auto smoothed_iteration = std::lerp(iter_curr, iter_next, results.distance_to_next_iteration);
             const auto pos_in_gradient = smoothed_iteration / static_cast<float>(max_iterations);
 
-            color_from_gradient(gradient, pos_in_gradient, image_data[static_cast<std::size_t>(pixel)]);
+            image_data[static_cast<std::size_t>(pixel)] = color_from_gradient(gradient, pos_in_gradient);
         }
 
         ++pixel;
@@ -221,8 +223,8 @@ void save_image(const std::string& filename, const std::vector<PixelColor>& imag
     if (!out.is_open())
         throw std::runtime_error("unable to open output file");
 
-    for (auto p : image_data)
-        out << p.r << p.g << p.b;
+    for (auto col : image_data)
+        out << col.r << col.g << col.b;
 }
 
 double mean(const std::vector<double>& values)
