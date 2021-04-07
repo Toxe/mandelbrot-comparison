@@ -1,16 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 project("Mandelbrot Comparison (C++)" LANGUAGES CXX)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    string(REGEX REPLACE " /W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
+set(ALL_TARGETS
+    mandelbrot_cpp
+)
 
 add_executable(mandelbrot_cpp mandelbrot.cpp)
-target_compile_features(mandelbrot_cpp PUBLIC cxx_std_20)
-set_target_properties(mandelbrot_cpp PROPERTIES CXX_EXTENSIONS OFF)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(mandelbrot_cpp PRIVATE -Wall -Wextra -Wmost -pedantic -Wconversion -Wfloat-equal -Wold-style-cast -fcolor-diagnostics)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(mandelbrot_cpp PRIVATE /W4)
-endif()
+foreach(target ${ALL_TARGETS})
+    set_target_properties(${target} PROPERTIES CXX_EXTENSIONS OFF)
+    target_compile_features(${target} PUBLIC cxx_std_20)
+    target_compile_options(${target} PRIVATE ${SANITIZER_FLAGS} ${DEFAULT_COMPILER_OPTIONS_AND_WARNINGS})
+    target_link_libraries(${target} PRIVATE ${SANITIZER_FLAGS})
+endforeach()

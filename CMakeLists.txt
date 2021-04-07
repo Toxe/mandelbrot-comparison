@@ -1,7 +1,16 @@
 cmake_minimum_required(VERSION 3.14)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 project("Mandelbrot Comparison" LANGUAGES C CXX)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+# default compiler options and warnings
+include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
+
+# static analyzers
+include(cmake/StaticAnalyzers.cmake)
+
+# sanitizers
+include(cmake/Sanitizers.cmake)
 
 add_subdirectory(C)
 add_subdirectory(C++)
