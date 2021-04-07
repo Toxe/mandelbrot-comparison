@@ -291,7 +291,7 @@ float *equalize_histogram(const int *iterations_histogram, const int max_iterati
     const float f = max_iterations / (float) (total_iterations - cdf_min);
 
     for (int i = 0; i < size; ++i)
-        equalized_iterations[i] = cdf[i] > 0 ? f * (float) (cdf[i] - cdf_min) : 0.0;
+        equalized_iterations[i] = cdf[i] > 0 ? f * (float) (cdf[i] - cdf_min) : 0.0f;
 
     free(cdf);
 

@@ -183,7 +183,7 @@ std::vector<float> equalize_histogram(const std::vector<int>& iterations_histogr
     const auto f = static_cast<float>(max_iterations) / static_cast<float>(total_iterations - *cdf_min);
     std::vector<float> equalized_iterations(iterations_histogram.size());
     std::transform(cdf.cbegin(), cdf.cend(), equalized_iterations.begin(),
-                   [=](const auto& c) { return c > 0 ? f * static_cast<float>(c - *cdf_min) : 0.0; });
+                   [=](const auto& c) { return c > 0 ? f * static_cast<float>(c - *cdf_min) : 0.0f; });
 
     return equalized_iterations;
 }
