@@ -57,6 +57,10 @@ struct ImageSize {
     int width, height;
 };
 
+struct Section {
+    double center_x, center_y, height;
+};
+
 Gradient load_gradient(const std::string& filename)
 {
     Gradient gradient;
@@ -109,15 +113,15 @@ PixelColor color_from_gradient(const Gradient& gradient, const float pos) noexce
         return PixelColor{0, 0, 0};
 }
 
-void mandelbrot_calc(const ImageSize& image, const int max_iterations, const double center_x, const double center_y, const double height,
+void mandelbrot_calc(const ImageSize& image, const Section& section, const int max_iterations,
                      std::vector<int>& iterations_histogram, std::vector<CalculationResult>& results_per_point) noexcept
 {
-    const double width = height * (static_cast<double>(image.width) / static_cast<double>(image.height));
+    const double width = section.height * (static_cast<double>(image.width) / static_cast<double>(image.height));
 
-    const double x_left   = center_x - width / 2.0;
-    const double x_right  = center_x + width / 2.0;
-    const double y_top    = center_y + height / 2.0;
-    const double y_bottom = center_y - height / 2.0;
+    const double x_left   = section.center_x - width / 2.0;
+    const double x_right  = section.center_x + width / 2.0;
+    const double y_top    = section.center_y + section.height / 2.0;
+    const double y_bottom = section.center_y - section.height / 2.0;
 
     constexpr double bailout = 20.0;
     constexpr double bailout_squared = bailout * bailout;
@@ -292,10 +296,10 @@ auto eval_args(const int argc, char const* argv[])
     auto colors         = std::string{argv[8]};
     auto filename       = std::string{argv[9]};
 
-    return std::make_tuple(ImageSize{image_width, image_height}, max_iterations, repetitions, center_x, center_y, height, colors, filename);
+    return std::make_tuple(ImageSize{image_width, image_height}, Section{center_x, center_y, height}, max_iterations, repetitions, colors, filename);
 }
 
-auto go(const ImageSize& image, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, const int repetitions) noexcept
+auto go(const ImageSize& image, const Section& section, const int max_iterations, const Gradient& gradient, const int repetitions) noexcept
 {
     // iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<int> iterations_histogram(static_cast<std::size_t>(max_iterations + 1));
@@ -309,7 +313,7 @@ auto go(const ImageSize& image, const int max_iterations, const double center_x,
 
     for (int i = 0; i < repetitions; ++i) {
         const auto t1 = std::chrono::high_resolution_clock::now();
-        mandelbrot_calc(image, max_iterations, center_x, center_y, height, iterations_histogram, results_per_point);
+        mandelbrot_calc(image, section, max_iterations, iterations_histogram, results_per_point);
         mandelbrot_colorize(max_iterations, gradient, image_data, iterations_histogram, results_per_point);
         const auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -321,10 +325,10 @@ auto go(const ImageSize& image, const int max_iterations, const double center_x,
 
 int main(int argc, char const* argv[])
 {
-    auto [image, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename] = eval_args(argc, argv);
+    auto [image, section, max_iterations, repetitions, gradient_filename, filename] = eval_args(argc, argv);
     auto gradient = load_gradient(gradient_filename);
 
-    auto [image_data, durations] = go(image, max_iterations, center_x, center_y, height, gradient, repetitions);
+    auto [image_data, durations] = go(image, section, max_iterations, gradient, repetitions);
 
     save_image(filename, image_data);
     show_summary(durations);

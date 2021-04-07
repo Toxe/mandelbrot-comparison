@@ -59,6 +59,10 @@ struct ImageSize {
     int width, height;
 };
 
+struct Section {
+    double center_x, center_y, height;
+};
+
 Gradient load_gradient(const std::string& filename)
 {
     Gradient gradient;
@@ -111,15 +115,15 @@ PixelColor color_from_gradient(const Gradient& gradient, const float pos) noexce
         return PixelColor{0, 0, 0};
 }
 
-void mandelbrot_calc(const ImageSize& image, const int max_iterations, const double center_x, const double center_y, const double height,
+void mandelbrot_calc(const ImageSize& image, const Section& section, const int max_iterations,
                      std::vector<int>& iterations_histogram, std::vector<CalculationResult>& results_per_point, const int start_row, const int num_rows) noexcept
 {
-    const double width = height * (static_cast<double>(image.width) / static_cast<double>(image.height));
+    const double width = section.height * (static_cast<double>(image.width) / static_cast<double>(image.height));
 
-    const double x_left   = center_x - width / 2.0;
-    const double x_right  = center_x + width / 2.0;
-    const double y_top    = center_y + height / 2.0;
-    const double y_bottom = center_y - height / 2.0;
+    const double x_left   = section.center_x - width / 2.0;
+    const double x_right  = section.center_x + width / 2.0;
+    const double y_top    = section.center_y + section.height / 2.0;
+    const double y_bottom = section.center_y - section.height / 2.0;
 
     constexpr double bailout = 20.0;
     constexpr double bailout_squared = bailout * bailout;
@@ -234,7 +238,7 @@ void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration
     }
 }
 
-std::vector<std::future<void>> start_threads(const ImageSize& image, const int max_iterations, const double center_x, const double center_y, const double height, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
+std::vector<std::future<void>> start_threads(const ImageSize& image, const Section& section, const int max_iterations, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
 {
     std::vector<std::future<void>> threads;
 
@@ -253,7 +257,7 @@ std::vector<std::future<void>> start_threads(const ImageSize& image, const int m
 
         next_start_row = start_row + num_rows;
 
-        threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image, max_iterations, center_x, center_y, height, std::ref(iteration_histograms_per_thread[static_cast<std::size_t>(i)]), std::ref(results_per_point), start_row, num_rows));
+        threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image, section, max_iterations, std::ref(iteration_histograms_per_thread[static_cast<std::size_t>(i)]), std::ref(results_per_point), start_row, num_rows));
     }
 
     return threads;
@@ -343,10 +347,10 @@ auto eval_args(const int argc, char const* argv[])
     if (num_threads > image_height)
         throw std::runtime_error("maximum number of threads must not exceed the number of pixel rows of the image");
 
-    return std::make_tuple(ImageSize{image_width, image_height}, max_iterations, repetitions, center_x, center_y, height, colors, filename, num_threads);
+    return std::make_tuple(ImageSize{image_width, image_height}, Section{center_x, center_y, height}, max_iterations, repetitions, colors, filename, num_threads);
 }
 
-auto go(const ImageSize& image, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, const int repetitions, const int num_threads) noexcept
+auto go(const ImageSize& image, const Section& section, const int max_iterations, const Gradient& gradient, const int repetitions, const int num_threads) noexcept
 {
     // iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
     std::vector<std::vector<int>> iteration_histograms_per_thread(static_cast<std::size_t>(num_threads), std::vector<int>(static_cast<std::size_t>(max_iterations + 1)));
@@ -362,7 +366,7 @@ auto go(const ImageSize& image, const int max_iterations, const double center_x,
     for (int i = 0; i < repetitions; ++i) {
         const auto t1 = std::chrono::high_resolution_clock::now();
 
-        auto threads = start_threads(image, max_iterations, center_x, center_y, height, iteration_histograms_per_thread, results_per_point, num_threads);
+        auto threads = start_threads(image, section, max_iterations, iteration_histograms_per_thread, results_per_point, num_threads);
         wait_for_threads_to_finish(threads);
         combine_iteration_histograms(iteration_histograms_per_thread, combined_iterations_histogram, num_threads);
         mandelbrot_colorize(max_iterations, gradient, image_data, combined_iterations_histogram, results_per_point);
@@ -376,10 +380,10 @@ auto go(const ImageSize& image, const int max_iterations, const double center_x,
 
 int main(int argc, char const* argv[])
 {
-    auto [image, max_iterations, repetitions, center_x, center_y, height, gradient_filename, filename, num_threads] = eval_args(argc, argv);
+    auto [image, section, max_iterations, repetitions, gradient_filename, filename, num_threads] = eval_args(argc, argv);
     auto gradient = load_gradient(gradient_filename);
 
-    auto [image_data, durations] = go(image, max_iterations, center_x, center_y, height, gradient, repetitions, num_threads);
+    auto [image_data, durations] = go(image, section, max_iterations, gradient, repetitions, num_threads);
 
     save_image(filename, image_data);
     show_summary(durations);
