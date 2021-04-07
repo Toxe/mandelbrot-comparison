@@ -14,3 +14,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     target_compile_options(mandelbrot_c PRIVATE /W4 /wd4996 /wd4706 /wd4267)
 endif()
+
+SET(NEEDS_LIBM Clang GNU)
+
+if(CMAKE_C_COMPILER_ID IN_LIST NEEDS_LIBM)
+    target_link_libraries(mandelbrot_c PRIVATE m)
+endif()
