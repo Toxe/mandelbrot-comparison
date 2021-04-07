@@ -226,16 +226,13 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
     }
 }
 
-void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<int>& combined_iterations_histogram, const int num_threads)
+void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<int>& combined_iterations_histogram)
 {
-    for (int iter = 0; iter < std::ssize(combined_iterations_histogram); ++iter) {
-        int sum = 0;
+    std::fill(combined_iterations_histogram.begin(), combined_iterations_histogram.end(), 0);
 
-        for (int n = 0; n < num_threads; ++n)
-            sum += iteration_histograms_per_thread[static_cast<std::size_t>(n)][static_cast<std::size_t>(iter)];
-
-        combined_iterations_histogram[static_cast<std::size_t>(iter)] = sum;
-    }
+    for (const auto& iterations_histogram : iteration_histograms_per_thread)
+        for (std::size_t iter = 0; iter < combined_iterations_histogram.size(); ++iter)
+            combined_iterations_histogram[iter] += iterations_histogram[iter];
 }
 
 std::vector<std::future<void>> start_threads(const ImageSize& image, const Section& section, const int max_iterations, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
@@ -368,7 +365,7 @@ auto go(const ImageSize& image, const Section& section, const int max_iterations
 
         auto threads = start_threads(image, section, max_iterations, iteration_histograms_per_thread, results_per_point, num_threads);
         wait_for_threads_to_finish(threads);
-        combine_iteration_histograms(iteration_histograms_per_thread, combined_iterations_histogram, num_threads);
+        combine_iteration_histograms(iteration_histograms_per_thread, combined_iterations_histogram);
         mandelbrot_colorize(max_iterations, gradient, image_data, combined_iterations_histogram, results_per_point);
 
         const auto t2 = std::chrono::high_resolution_clock::now();
