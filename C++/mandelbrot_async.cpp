@@ -134,7 +134,7 @@ void mandelbrot_calc(const ImageSize& image, const Section& section, const int m
 
     std::fill(iterations_histogram.begin(), iterations_histogram.end(), 0);
 
-    int pixel = start_row * image.width;
+    std::size_t pixel = static_cast<std::size_t>(start_row * image.width);
 
     for (int pixel_y = start_row; pixel_y < (start_row + num_rows); ++pixel_y) {
         const double y0 = std::lerp(y_top, y_bottom, static_cast<double>(pixel_y) / static_cast<double>(image.height));
@@ -166,9 +166,9 @@ void mandelbrot_calc(const ImageSize& image, const Section& section, const int m
 
             if (iter < max_iterations) {
                 ++iterations_histogram[static_cast<std::size_t>(iter)]; // iter: 1 .. max_iterations-1, no need to count iterations_histogram[max_iterations]
-                results_per_point[static_cast<std::size_t>(pixel)] = CalculationResult{iter, 1.0f - std::min(1.0f, static_cast<float>((std::log(std::log(final_magnitude)) - log_log_bailout) / log_2))};
+                results_per_point[pixel] = CalculationResult{iter, 1.0f - std::min(1.0f, static_cast<float>((std::log(std::log(final_magnitude)) - log_log_bailout) / log_2))};
             } else {
-                results_per_point[static_cast<std::size_t>(pixel)] = CalculationResult{iter, 0.0};
+                results_per_point[pixel] = CalculationResult{iter, 0.0};
             }
 
             ++pixel;
@@ -202,12 +202,12 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
                          std::vector<PixelColor>& image_data, const std::vector<int>& iterations_histogram, const std::vector<CalculationResult>& results_per_point) noexcept
 {
     const auto equalized_iterations = equalize_histogram(iterations_histogram, max_iterations);
-    int pixel = 0;
+    std::size_t pixel = 0;
 
     for (auto& results : results_per_point) {
         if (results.iter == max_iterations) {
             // points inside the Mandelbrot Set are always painted black
-            image_data[static_cast<std::size_t>(pixel)] = PixelColor{0, 0, 0};
+            image_data[pixel] = PixelColor{0, 0, 0};
         } else {
             // The equalized iteration value (in the range of 0 .. max_iterations) represents the
             // position of the pixel color in the color gradiant and needs to be mapped to 0.0 .. 1.0.
@@ -219,7 +219,7 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
             const auto smoothed_iteration = std::lerp(iter_curr, iter_next, results.distance_to_next_iteration);
             const auto pos_in_gradient = smoothed_iteration / static_cast<float>(max_iterations);
 
-            image_data[static_cast<std::size_t>(pixel)] = color_from_gradient(gradient, pos_in_gradient);
+            image_data[pixel] = color_from_gradient(gradient, pos_in_gradient);
         }
 
         ++pixel;
