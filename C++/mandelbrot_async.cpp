@@ -299,6 +299,37 @@ auto eval_args(const int argc, char const* argv[])
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename, num_threads);
 }
 
+std::vector<std::future<void>> start_threads(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, std::vector<std::vector<int>>& iterations_histogram_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
+{
+    std::vector<std::future<void>> threads;
+
+    const int min_rows_per_thread = image_height / num_threads;
+    int extra_rows = image_height % num_threads;
+    int next_start_row = 0;
+
+    for (int i = 0; i < num_threads; ++i) {
+        const int start_row = next_start_row;
+        int num_rows = min_rows_per_thread;
+
+        if (extra_rows > 0) {
+            ++num_rows;
+            --extra_rows;
+        }
+
+        next_start_row = start_row + num_rows;
+
+        threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image_width, image_height, max_iterations, center_x, center_y, height, std::ref(iterations_histogram_per_thread[static_cast<std::size_t>(i)]), std::ref(results_per_point), start_row, num_rows));
+    }
+
+    return threads;
+}
+
+void wait_for_threads_to_finish(std::vector<std::future<void>>& threads)
+{
+    for (auto& t : threads)
+        t.wait();
+}
+
 auto go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, const int repetitions, const int num_threads) noexcept
 {
     // iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
@@ -313,20 +344,11 @@ auto go(const int image_width, const int image_height, const int max_iterations,
     std::vector<PixelColor> image_data(static_cast<std::size_t>(image_width * image_height));
     std::vector<double> durations;
 
-    const int num_rows = image_height / num_threads;
-
     for (int i = 0; i < repetitions; ++i) {
         const auto t1 = std::chrono::high_resolution_clock::now();
 
-        std::vector<std::future<void>> threads;
-
-        for (int n = 0; n < num_threads; ++n) {
-            const int start_row = n * num_rows;
-            threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image_width, image_height, max_iterations, center_x, center_y, height, std::ref(iterations_histogram_per_thread[n]), std::ref(results_per_point), start_row, num_rows));
-        }
-
-        for (auto& t : threads)
-            t.wait();
+        auto threads = start_threads(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram_per_thread, results_per_point, num_threads);
+        wait_for_threads_to_finish(threads);
 
         for (int iter = 0; iter < std::ssize(combined_iterations_histogram); ++iter) {
             int sum = 0;
