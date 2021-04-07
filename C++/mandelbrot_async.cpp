@@ -277,7 +277,7 @@ T eval_arg(const char* s, T min, T max)
 
 auto eval_args(const int argc, char const* argv[])
 {
-    if (argc != 10)
+    if (argc < 10 || argc > 11)
         throw std::runtime_error("invalid number of arguments");
 
     auto image_width    = eval_arg(argv[1], 1, 100000);
@@ -289,7 +289,9 @@ auto eval_args(const int argc, char const* argv[])
     auto height         = eval_arg(argv[7], -100.0, 100.0);
     auto colors         = std::string{argv[8]};
     auto filename       = std::string{argv[9]};
-    int num_threads     = std::max(static_cast<int>(std::thread::hardware_concurrency()) - 4, 4);
+    auto num_threads    = (argc == 11) ? eval_arg(argv[10], 2, 1000) : std::max(static_cast<int>(std::thread::hardware_concurrency()) - 2, 4);
+
+    std::cout << "using " << num_threads << " threads\n";
 
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename, num_threads);
 }
