@@ -218,7 +218,19 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
     }
 }
 
-std::vector<std::future<void>> start_threads(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, std::vector<std::vector<int>>& iterations_histogram_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
+void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<int>& combined_iterations_histogram, const int num_threads)
+{
+    for (int iter = 0; iter < std::ssize(combined_iterations_histogram); ++iter) {
+        int sum = 0;
+
+        for (int n = 0; n < num_threads; ++n)
+            sum += iteration_histograms_per_thread[static_cast<std::size_t>(n)][static_cast<std::size_t>(iter)];
+
+        combined_iterations_histogram[static_cast<std::size_t>(iter)] = sum;
+    }
+}
+
+std::vector<std::future<void>> start_threads(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
 {
     std::vector<std::future<void>> threads;
 
@@ -237,7 +249,7 @@ std::vector<std::future<void>> start_threads(const int image_width, const int im
 
         next_start_row = start_row + num_rows;
 
-        threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image_width, image_height, max_iterations, center_x, center_y, height, std::ref(iterations_histogram_per_thread[static_cast<std::size_t>(i)]), std::ref(results_per_point), start_row, num_rows));
+        threads.emplace_back(std::async(std::launch::async, mandelbrot_calc, image_width, image_height, max_iterations, center_x, center_y, height, std::ref(iteration_histograms_per_thread[static_cast<std::size_t>(i)]), std::ref(results_per_point), start_row, num_rows));
     }
 
     return threads;
@@ -333,8 +345,7 @@ auto eval_args(const int argc, char const* argv[])
 auto go(const int image_width, const int image_height, const int max_iterations, const double center_x, const double center_y, const double height, const Gradient& gradient, const int repetitions, const int num_threads) noexcept
 {
     // iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    std::vector<std::vector<int>> iterations_histogram_per_thread(static_cast<std::size_t>(num_threads),
-                                                                  std::vector<int>(static_cast<std::size_t>(max_iterations + 1)));
+    std::vector<std::vector<int>> iteration_histograms_per_thread(static_cast<std::size_t>(num_threads), std::vector<int>(static_cast<std::size_t>(max_iterations + 1)));
     std::vector<int> combined_iterations_histogram(static_cast<std::size_t>(max_iterations + 1));
 
     // For every point store a tuple consisting of the final iteration and (for escaped points)
@@ -347,21 +358,12 @@ auto go(const int image_width, const int image_height, const int max_iterations,
     for (int i = 0; i < repetitions; ++i) {
         const auto t1 = std::chrono::high_resolution_clock::now();
 
-        auto threads = start_threads(image_width, image_height, max_iterations, center_x, center_y, height, iterations_histogram_per_thread, results_per_point, num_threads);
+        auto threads = start_threads(image_width, image_height, max_iterations, center_x, center_y, height, iteration_histograms_per_thread, results_per_point, num_threads);
         wait_for_threads_to_finish(threads);
-
-        for (int iter = 0; iter < std::ssize(combined_iterations_histogram); ++iter) {
-            int sum = 0;
-
-            for (int n = 0; n < num_threads; ++n)
-                sum += iterations_histogram_per_thread[n][iter];
-
-            combined_iterations_histogram[iter] = sum;
-        }
-
+        combine_iteration_histograms(iteration_histograms_per_thread, combined_iterations_histogram, num_threads);
         mandelbrot_colorize(max_iterations, gradient, image_data, combined_iterations_histogram, results_per_point);
-        const auto t2 = std::chrono::high_resolution_clock::now();
 
+        const auto t2 = std::chrono::high_resolution_clock::now();
         durations.push_back(std::chrono::duration<double>{t2 - t1}.count());
     }
 
