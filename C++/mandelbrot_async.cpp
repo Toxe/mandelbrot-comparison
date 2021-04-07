@@ -293,6 +293,9 @@ auto eval_args(const int argc, char const* argv[])
 
     std::cout << "using " << num_threads << " threads\n";
 
+    if (num_threads > image_height)
+        throw std::runtime_error("maximum number of threads must not exceed the number of pixel rows of the image");
+
     return std::make_tuple(image_width, image_height, max_iterations, repetitions, center_x, center_y, height, colors, filename, num_threads);
 }
 
