@@ -57,7 +57,7 @@ float lerp_float(const float a, const float b, const float t)
     return (1.0f - t) * a + t * b;
 }
 
-float lerp_double(const double a, const double b, const double t)
+double lerp_double(const double a, const double b, const double t)
 {
     return (1.0 - t) * a + t * b;
 }
