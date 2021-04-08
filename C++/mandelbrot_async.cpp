@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <future>
 #include <iostream>
 #include <limits>
@@ -228,11 +229,11 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
 
 void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<int>& combined_iterations_histogram)
 {
-    std::copy(iteration_histograms_per_thread[0].cbegin(), iteration_histograms_per_thread[0].cend(), combined_iterations_histogram.begin());
+    std::copy(iteration_histograms_per_thread.front().cbegin(), iteration_histograms_per_thread.front().cend(), combined_iterations_histogram.begin());
 
-    for (std::size_t i = 1; i < iteration_histograms_per_thread.size(); ++i)
-        for (std::size_t iter = 0; iter < combined_iterations_histogram.size(); ++iter)
-            combined_iterations_histogram[iter] += iteration_histograms_per_thread[i][iter];
+    std::for_each(std::next(iteration_histograms_per_thread.cbegin()), iteration_histograms_per_thread.cend(), [&](auto& hist) {
+        std::transform(hist.cbegin(), hist.cend(), combined_iterations_histogram.cbegin(), combined_iterations_histogram.begin(), std::plus<>{});
+    });
 }
 
 std::vector<std::future<void>> start_threads(const ImageSize& image, const Section& section, const int max_iterations, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
