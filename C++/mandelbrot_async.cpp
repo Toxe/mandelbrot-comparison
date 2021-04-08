@@ -228,11 +228,11 @@ void mandelbrot_colorize(const int max_iterations, const Gradient& gradient,
 
 void combine_iteration_histograms(const std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<int>& combined_iterations_histogram)
 {
-    std::fill(combined_iterations_histogram.begin(), combined_iterations_histogram.end(), 0);
+    std::copy(iteration_histograms_per_thread[0].cbegin(), iteration_histograms_per_thread[0].cend(), combined_iterations_histogram.begin());
 
-    for (const auto& iterations_histogram : iteration_histograms_per_thread)
+    for (std::size_t i = 1; i < iteration_histograms_per_thread.size(); ++i)
         for (std::size_t iter = 0; iter < combined_iterations_histogram.size(); ++iter)
-            combined_iterations_histogram[iter] += iterations_histogram[iter];
+            combined_iterations_histogram[iter] += iteration_histograms_per_thread[i][iter];
 }
 
 std::vector<std::future<void>> start_threads(const ImageSize& image, const Section& section, const int max_iterations, std::vector<std::vector<int>>& iteration_histograms_per_thread, std::vector<CalculationResult>& results_per_point, const int num_threads)
