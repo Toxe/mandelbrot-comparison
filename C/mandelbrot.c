@@ -15,7 +15,8 @@
 #include <errno.h>
 #include <limits.h>
 
-#ifdef _WIN32
+#if _WIN32 || _WIN64
+#define WIN32_LEAN_AND_MEAN
 #include <time.h>
 #include <Windows.h>
 #else
@@ -121,7 +122,7 @@ gradient_t *load_gradient(char *filename)
 
     gradient->num_colors = 2;
 
-    if (!(gradient->colors = (gradient_color_t *) malloc(gradient->num_colors * sizeof(gradient_color_t))))
+    if (!(gradient->colors = (gradient_color_t *) malloc((size_t) gradient->num_colors * sizeof(gradient_color_t))))
         die("alloc memory");
 
     gradient->colors[0].pos = 0.0;
@@ -146,7 +147,7 @@ gradient_t *load_gradient(char *filename)
 
         if (!(col = gradient_get_color_at_position(gradient, pos))) {
             gradient->num_colors++;
-            gradient->colors = (gradient_color_t *) realloc(gradient->colors, gradient->num_colors * sizeof(gradient_color_t));
+            gradient->colors = (gradient_color_t *) realloc(gradient->colors, (size_t) gradient->num_colors * sizeof(gradient_color_t));
             col = &gradient->colors[gradient->num_colors - 1];
         }
 
@@ -156,7 +157,7 @@ gradient_t *load_gradient(char *filename)
         col->b = b;
     }
 
-    qsort(gradient->colors, gradient->num_colors, sizeof(gradient_color_t), cmp_color_pos_func);
+    qsort(gradient->colors, (size_t) gradient->num_colors, sizeof(gradient_color_t), cmp_color_pos_func);
 
     fclose(fp);
     return gradient;
@@ -211,7 +212,7 @@ void mandelbrot_calc(int image_width, int image_height, int max_iterations, doub
 
     double final_magnitude = 0.0;
 
-    memset(iterations_histogram, 0, (max_iterations + 1) * sizeof(int));
+    memset(iterations_histogram, 0, (size_t) (max_iterations + 1) * sizeof(int));
 
     int pixel = 0;
 
@@ -263,10 +264,10 @@ float *equalize_histogram(const int *iterations_histogram, const int max_iterati
     int *cdf;
     float *equalized_iterations;
 
-    if (!(cdf = (int *) malloc(size * sizeof(int))))
+    if (!(cdf = (int *) malloc((size_t) size * sizeof(int))))
         die("alloc memory");
 
-    if (!(equalized_iterations = (float *) malloc(size * sizeof(float))))
+    if (!(equalized_iterations = (float *) malloc((size_t) size * sizeof(float))))
         die("alloc memory");
 
     // Calculate the CDF (Cumulative Distribution Function) by accumulating all iteration counts.
@@ -288,7 +289,7 @@ float *equalize_histogram(const int *iterations_histogram, const int max_iterati
     const int total_iterations = cdf[size - 1];
 
     // normalize all values from the CDF that are bigger than zero to a range of 0.0 .. max_iterations
-    const float f = max_iterations / (float) (total_iterations - cdf_min);
+    const float f = (float) max_iterations / (float) (total_iterations - cdf_min);
 
     for (int i = 0; i < size; ++i)
         equalized_iterations[i] = cdf[i] > 0 ? f * (float) (cdf[i] - cdf_min) : 0.0f;
@@ -336,7 +337,7 @@ int save_image(const char *filename, const pixel_color_t *image_data, int width,
     if (!(fp = fopen(filename, "wb")))
         return -1;
 
-    fwrite(image_data, sizeof(pixel_color_t), width * height, fp);
+    fwrite(image_data, sizeof(pixel_color_t), (size_t) (width * height), fp);
     fclose(fp);
 
     return 0;
@@ -367,11 +368,11 @@ double median(const double *values, int num_values)
 {
     double *sorted_values;
 
-    if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
+    if (!(sorted_values = (double *) malloc((size_t) num_values * sizeof(double))))
         die("alloc memory");
 
-    memcpy(sorted_values, values, num_values * sizeof(double));
-    qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
+    memcpy(sorted_values, values, (size_t) num_values * sizeof(double));
+    qsort(sorted_values, (size_t) num_values, sizeof(double), cmp_doubles_func);
 
     double d;
 
@@ -393,30 +394,30 @@ char *durations2string(const double *values, int num_values)
     int tmp_len;
     int pos;
 
-    if (!(sorted_values = (double *) malloc(num_values * sizeof(double))))
+    if (!(sorted_values = (double *) malloc((size_t) num_values * sizeof(double))))
         die("alloc memory");
 
-    memcpy(sorted_values, values, num_values * sizeof(double));
-    qsort(sorted_values, num_values, sizeof(double), cmp_doubles_func);
+    memcpy(sorted_values, values, (size_t) num_values * sizeof(double));
+    qsort(sorted_values, (size_t) num_values, sizeof(double), cmp_doubles_func);
 
-    if (!(buf = (char *) malloc(buf_len * sizeof(char))))
+    if (!(buf = (char *) malloc((size_t) buf_len * sizeof(char))))
         die("alloc memory");
 
     sprintf(buf, "[");
-    pos = strlen(buf);
+    pos = (int) strlen(buf);
 
     for (int i = 0; i < num_values; ++i) {
         sprintf(tmp, "%s%f", (i > 0) ? ", " : "", sorted_values[i]);
-        tmp_len = strlen(tmp);
+        tmp_len = (int) strlen(tmp);
 
         if ((pos + tmp_len + 1) > buf_len) {
             buf_len += 256;
 
-            if (!(buf = (char *) realloc(buf, buf_len)))
+            if (!(buf = (char *) realloc(buf, (size_t) buf_len)))
                 die("alloc memory");
         }
 
-        memcpy(buf + pos, tmp, tmp_len + 1);
+        memcpy(buf + pos, tmp, (size_t) tmp_len + 1);
         pos += tmp_len;
     }
 
@@ -439,7 +440,7 @@ void show_summary(const double *durations, int repetitions)
 
 double gettime()
 {
-#ifdef _WIN32
+#if _WIN32 || _WIN64
     LARGE_INTEGER t, freq;
 
     QueryPerformanceFrequency(&freq);
@@ -448,7 +449,7 @@ double gettime()
     t.QuadPart *= 1000000;
     t.QuadPart /= freq.QuadPart;
 
-    return t.QuadPart / 1000000.0;
+    return (double) t.QuadPart / 1000000.0;
 #else
     struct timeval tv;
 
@@ -508,12 +509,12 @@ void go(int image_width, int image_height, int max_iterations, double center_x, 
     calculation_result_t *results_per_point;
 
     // iterations_histogram: for simplicity we only use indices [1] .. [max_iterations], [0] is unused
-    if (!(iterations_histogram = (int *) malloc((max_iterations + 1) * sizeof(int))))
+    if (!(iterations_histogram = (int *) malloc((size_t) (max_iterations + 1) * sizeof(int))))
         die("alloc memory");
 
     // For every point store a tuple consisting of the final iteration and (for escaped points)
     // the distance to the next iteration (as value of 0.0 .. 1.0).
-    if (!(results_per_point = (calculation_result_t *) malloc(image_width * image_height * sizeof(calculation_result_t))))
+    if (!(results_per_point = (calculation_result_t *) malloc((size_t) (image_width * image_height) * sizeof(calculation_result_t))))
         die("alloc memory");
 
     for (int i = 0; i < repetitions; ++i) {
@@ -546,10 +547,10 @@ int main(int argc, char **argv)
     if (!(gradient = load_gradient(gradient_filename)))
         die("unable to load gradient");
 
-    if (!(image_data = (pixel_color_t *) malloc(image_width * image_height * sizeof(pixel_color_t))))
+    if (!(image_data = (pixel_color_t *) malloc((size_t) (image_width * image_height) * sizeof(pixel_color_t))))
         die("alloc memory");
 
-    if (!(durations = (double *) malloc(repetitions * sizeof(double))))
+    if (!(durations = (double *) malloc((size_t) repetitions * sizeof(double))))
         die("alloc memory");
 
     go(image_width, image_height, max_iterations, center_x, center_y, height, gradient, image_data, durations, repetitions);
