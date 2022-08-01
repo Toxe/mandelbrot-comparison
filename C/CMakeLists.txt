@@ -6,17 +6,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
 endif()
 
 add_executable(mandelbrot_c mandelbrot.c)
-target_compile_features(mandelbrot_c PUBLIC c_std_11)
 set_target_properties(mandelbrot_c PROPERTIES C_EXTENSIONS OFF)
+target_compile_features(mandelbrot_c PUBLIC c_std_11)
+target_compile_options(mandelbrot_c PRIVATE ${SANITIZER_FLAGS} ${DEFAULT_COMPILER_OPTIONS} ${DEFAULT_COMPILER_WARNINGS})
+target_link_libraries(mandelbrot_c PRIVATE ${SANITIZER_FLAGS})
 
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    target_compile_options(mandelbrot_c PRIVATE -Wall -Wextra -Wmost -pedantic -Wfloat-equal -fcolor-diagnostics)
-elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(mandelbrot_c PRIVATE /W4 /wd4996 /wd4706 /wd4267)
-endif()
-
-SET(NEEDS_LIBM Clang GNU)
-
-if(CMAKE_C_COMPILER_ID IN_LIST NEEDS_LIBM)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    # Clang
     target_link_libraries(mandelbrot_c PRIVATE m)
-endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC
+    target_link_libraries(mandelbrot_c PRIVATE m)
+endif ()
