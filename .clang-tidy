@@ -1,14 +1,29 @@
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
 ---
 Checks: 'bugprone-*,
+         cert-*,
          clang-analyzer-*,
-         clang-diagnostic-*,
+         concurrency-*,
          cppcoreguidelines-*,
+         llvm-*,
          misc-*,
          modernize-*,
          performance-*,
          portability-*,
          readability-*,
 
+         -llvm-header-guard,
          -modernize-use-trailing-return-type,
          -readability-braces-around-statements'
+
+CheckOptions:
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: "true"
+  - key: llvm-namespace-comment.SpacesBeforeComments
+    value: "2"
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: "true"
+  - key: readability-uppercase-literal-suffix.NewSuffixes
+    value: "f"
 ...
