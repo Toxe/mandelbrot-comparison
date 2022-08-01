@@ -1,5 +1,18 @@
+# CLion
+/.idea
+/cmake-build*
+
+# Visual Studio
+/.vs
+/out
+/CMakeSettings.json
+
+# Visual Studio Code
+/.vscode
+
+# CMake
+/build*
+
 *.raw
-build*
-.vscode
-.vs
-CMakeSettings.json
+*.sh
+*.bat
