@@ -66,7 +66,7 @@ set(DEFAULT_MSVC_OPTIONS
         /w14928  # C4928: illegal copy-initialization; more than one user-defined conversion has been implicitly applied
 )
 
-# Clang-cl specific options (Clang + MSVC)
+# Clang-cl specific options
 set(DEFAULT_CLANG_CL_OPTIONS
         ${SHARED_CLANG_AND_CLANG_CL_AND_GCC_OPTIONS}
         ${DEFAULT_MSVC_OPTIONS}

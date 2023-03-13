@@ -1,30 +1,50 @@
-# unsupported sanitizers for GCC
-set(GCC_UNSUPPORTED_SANITIZERS
-    memory
-)
+set(USE_SANITIZER "" CACHE STRING "Enable sanitizer(s). Options are: address, leak, memory, thread, undefined, ASAN, LSAN, MSAN, TSAN, UBSAN. Case insensitive; multiple options delimited by comma or space possible.")
 
-option(USE_SANITIZER "Enable sanitizer. Options are: OFF, address, leak, thread, undefined, memory" OFF)
+string(TOLOWER "${USE_SANITIZER}" USE_SANITIZER)
 
-string(TOLOWER ${USE_SANITIZER} USE_SANITIZER)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # MSVC
+    if (USE_SANITIZER MATCHES "address" OR USE_SANITIZER MATCHES "asan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS /fsanitize=address /D_DISABLE_VECTOR_ANNOTATION /D_DISABLE_STRING_ANNOTATION)
+    endif ()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    # Clang-cl
+    if (USE_SANITIZER MATCHES "address" OR USE_SANITIZER MATCHES "asan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS /fsanitize=address /D_DISABLE_VECTOR_ANNOTATION /D_DISABLE_STRING_ANNOTATION)
+        list(APPEND SANITIZER_LINK_LIBRARIES clang_rt.asan_dynamic-x86_64 clang_rt.asan_dynamic_runtime_thunk-x86_64)
+    endif ()
+else ()
+    # GCC and Clang
+    if (USE_SANITIZER MATCHES "address" OR USE_SANITIZER MATCHES "asan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS -fsanitize=address -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_OPTIONS -fsanitize=address -fno-omit-frame-pointer)
+    endif ()
 
-if(USE_SANITIZER STREQUAL "address")
-    set(SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
-elseif(USE_SANITIZER STREQUAL "leak")
-    set(SANITIZER_FLAGS -fsanitize=leak)
-elseif(USE_SANITIZER STREQUAL "thread")
-    set(SANITIZER_FLAGS -fsanitize=thread)
-elseif(USE_SANITIZER STREQUAL "undefined")
-    set(SANITIZER_FLAGS -fsanitize=undefined -fno-omit-frame-pointer)
-elseif(USE_SANITIZER STREQUAL "memory")
-    set(SANITIZER_FLAGS -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fPIE -pie)
-endif()
+    if (USE_SANITIZER MATCHES "leak" OR USE_SANITIZER MATCHES "lsan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS -fsanitize=leak -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_OPTIONS -fsanitize=leak -fno-omit-frame-pointer)
+    endif ()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    if(USE_SANITIZER IN_LIST GCC_UNSUPPORTED_SANITIZERS)
-        message(SEND_ERROR "GCC does not support sanitizer: ${USE_SANITIZER}")
-    endif()
-endif()
+    if (USE_SANITIZER MATCHES "memory" OR USE_SANITIZER MATCHES "msan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fPIE -pie)
+        list(APPEND SANITIZER_LINK_OPTIONS -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fPIE -pie)
+    endif ()
 
-if(SANITIZER_FLAGS)
+    if (USE_SANITIZER MATCHES "thread" OR USE_SANITIZER MATCHES "tsan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS -fsanitize=thread -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_OPTIONS -fsanitize=thread -fno-omit-frame-pointer)
+    endif ()
+
+    if (USE_SANITIZER MATCHES "undefined" OR USE_SANITIZER MATCHES "ubsan")
+        list(APPEND SANITIZER_COMPILE_OPTIONS -fsanitize=undefined -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_OPTIONS -fsanitize=undefined -fno-omit-frame-pointer)
+    endif ()
+endif ()
+
+list(REMOVE_DUPLICATES SANITIZER_COMPILE_OPTIONS)
+list(REMOVE_DUPLICATES SANITIZER_LINK_OPTIONS)
+list(REMOVE_DUPLICATES SANITIZER_LINK_LIBRARIES)
+
+if (SANITIZER_COMPILE_OPTIONS)
     message(STATUS "Using sanitizer: " ${USE_SANITIZER})
-endif()
+endif ()
