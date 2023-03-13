@@ -15,7 +15,10 @@ Checks: 'bugprone-*,
 
          -llvm-header-guard,
          -modernize-use-trailing-return-type,
-         -readability-braces-around-statements'
+         -readability-braces-around-statements,
+         -readability-identifier-length,
+         -readability-magic-numbers,
+         -cppcoreguidelines-avoid-magic-numbers'
 
 CheckOptions:
   - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
