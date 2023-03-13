@@ -7,6 +7,10 @@
  * Tobias Brückner, 2016
  */
 
+#if _WIN32 || _WIN64
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
