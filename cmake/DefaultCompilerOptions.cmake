@@ -12,13 +12,14 @@ set(DEFAULT_GCC_OPTIONS
 
 # MSVC specific options
 set(DEFAULT_MSVC_OPTIONS
-        /permissive-
         /diagnostics:caret
+        /permissive-
+        /EHsc  # enable exception handling
 )
 
 # Clang-cl specific options
 set(DEFAULT_CLANG_CL_OPTIONS
-        ${DEFAULT_MSVC_OPTIONS}
+        /permissive-
         /EHsc  # enable exception handling
 )
 
