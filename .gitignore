@@ -13,6 +13,6 @@
 # CMake
 /build*
 
-*.raw
-*.sh
-*.bat
+/*.raw
+/*.sh
+/*.bat
