@@ -1,8 +1,8 @@
 # Define default compiler warnings for Clang, GCC and MSVC.
 
-#https://clang.llvm.org/docs/DiagnosticsReference.html
-#https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
-#https://docs.microsoft.com/en-us/cpp/preprocessor/compiler-warnings-that-are-off-by-default?view=msvc-170
+# https://clang.llvm.org/docs/DiagnosticsReference.html
+# https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+# https://docs.microsoft.com/en-us/cpp/preprocessor/compiler-warnings-that-are-off-by-default?view=msvc-170
 
 # shared options between Clang, Clang-cl and GCC
 set(SHARED_CLANG_AND_CLANG_CL_AND_GCC_OPTIONS
@@ -29,6 +29,7 @@ set(DEFAULT_CLANG_OPTIONS
         -Wall
         -Wmost
         -Wpedantic
+        -Wshadow-all
 )
 
 # GCC specific options
@@ -45,6 +46,7 @@ set(DEFAULT_GCC_OPTIONS
 # MSVC specific options
 set(DEFAULT_MSVC_OPTIONS
         /W4
+        /w14062  # C4062: enumerator 'identifier' in switch of enum 'enumeration' is not handled
         /w14242  # C4242: 'identifier': conversion from 'type1' to 'type2', possible loss of data
         /w14254  # C4254: 'operator': conversion from 'type1' to 'type2', possible loss of data
         /w14263  # C4263: 'function': member function does not override any base class virtual member function
@@ -70,6 +72,9 @@ set(DEFAULT_MSVC_OPTIONS
 set(DEFAULT_CLANG_CL_OPTIONS
         ${SHARED_CLANG_AND_CLANG_CL_AND_GCC_OPTIONS}
         ${DEFAULT_MSVC_OPTIONS}
+        -Wmost
+        -Wpedantic
+        -Wshadow-all
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
